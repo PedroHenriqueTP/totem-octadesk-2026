@@ -19,7 +19,7 @@ export default function QuizApp() {
     email: "",
     telefone: "",
     faturamentoMensal: "ate_50k", // Valor padrão padrão para compatibilidade com o motor
-    volumeVendasMes: "" as any,
+    volumeVendasMes: "ate_100", // Valor padrão padrão
     equipeAtendimento: "" as any,
     canalPrincipal: "" as any,
     maiorGargalo: "" as any,
@@ -28,10 +28,10 @@ export default function QuizApp() {
 
   const [diagnostico, setDiagnostico] = useState<DiagnosticoResultado | null>(null);
 
-  // Efeito de animação de progresso do loading (Step 8)
+  // Efeito de animação de progresso do loading (Step 6)
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (step === 8) {
+    if (step === 6) {
       setProgress(0);
       const startTime = Date.now();
       const duration = 2000;
@@ -43,7 +43,7 @@ export default function QuizApp() {
 
         if (elapsed >= duration) {
           clearInterval(interval);
-          setStep(9); // Vai para o resultado final
+          setStep(7); // Vai para o resultado final
         }
       }, 30);
     }
@@ -69,29 +69,52 @@ export default function QuizApp() {
     isEmailValid(formData.email) &&
     formData.telefone.trim().length >= 8;
 
+  // Processa a seleção das opções no Quiz (Q1 e Q2 avançam, Q3 calcula e finaliza)
   const handleSelectOption = (field: keyof LeadData, value: string) => {
     handleInputChange(field, value);
-    
-    // Se for a última pergunta do quiz, calcula o diagnóstico e salva localmente
-    if (field === 'dorFinanceira') {
-      const updatedData = { ...formData, [field]: value } as LeadData;
+    setTimeout(() => {
+      handleNextStep();
+    }, 300);
+  };
+
+  const handleSelectQ3 = (optionValue: 'automacao_vendas' | 'centralizar' | 'metricas' | 'escala') => {
+    setFormData((prev) => {
+      const updated = { ...prev };
       
-      // Ajuste de compatibilidade para acionar o transbordo urgente comercial no motor se equipe for > 15
-      if (updatedData.equipeAtendimento === 'mais_15') {
-        updatedData.faturamentoMensal = 'acima_500k';
+      // Mapeamento lógico de soluções positivas para alimentar as chaves internas do motor de triagem
+      if (optionValue === 'automacao_vendas') {
+        updated.maiorGargalo = 'demora_whatsapp';
+        updated.dorFinanceira = 'abandono_carrinho';
+        updated.canalPrincipal = 'ecommerce'; // Força para acionar a trilha de automação ecommerce
+      } else if (optionValue === 'centralizar') {
+        updated.maiorGargalo = 'centralizar_numero';
+        updated.dorFinanceira = 'saida_chat';
+      } else if (optionValue === 'metricas') {
+        updated.maiorGargalo = 'falta_metricas';
+        updated.dorFinanceira = 'pos_venda';
+      } else if (optionValue === 'escala') {
+        updated.maiorGargalo = 'perda_historico';
+        updated.dorFinanceira = 'pos_venda';
+        updated.equipeAtendimento = 'mais_15'; // Força para acionar transbordo urgente comercial
+        updated.faturamentoMensal = 'acima_500k'; // Força comercial urgente
       }
 
-      const result = processarDiagnosticoLead(updatedData);
+      // Se nas perguntas anteriores o usuário selecionou uma equipe de mais de 15 pessoas, força comercial urgente
+      if (updated.equipeAtendimento === 'mais_15') {
+        updated.faturamentoMensal = 'acima_500k';
+      }
+
+      const updatedLead = updated as LeadData;
+      const result = processarDiagnosticoLead(updatedLead);
       setDiagnostico(result);
-      LocalStorageManager.salvarLeadLocal(updatedData, result);
-      setTimeout(() => {
-        setStep(8); // Tela de carregamento/processamento
-      }, 300);
-    } else {
-      setTimeout(() => {
-        handleNextStep();
-      }, 300);
-    }
+      LocalStorageManager.salvarLeadLocal(updatedLead, result);
+      
+      return updated;
+    });
+
+    setTimeout(() => {
+      setStep(6); // VAI PARA O LOADING
+    }, 300);
   };
 
   const handleReset = () => {
@@ -104,7 +127,7 @@ export default function QuizApp() {
         email: "",
         telefone: "",
         faturamentoMensal: "ate_50k",
-        volumeVendasMes: "" as any,
+        volumeVendasMes: "ate_100",
         equipeAtendimento: "" as any,
         canalPrincipal: "" as any,
         maiorGargalo: "" as any,
@@ -116,27 +139,28 @@ export default function QuizApp() {
     }
   };
 
-  const getMascotState = (): 'floating' | 'thinking' | 'success' => {
-    if (step === 8) return 'thinking';
-    if (step === 9) return 'success';
-    return 'floating';
+  const getMascotState = (): 'floating_light' | 'floating_dark' | 'thinking' | 'success' => {
+    if (step === 6) return 'thinking';
+    if (step === 7) return 'success';
+    if (step === 1 || step === 2) return 'floating_light';
+    return 'floating_dark';
   };
 
   const getBackgroundStyle = () => {
-    if (step === 1) return { background: '#F8FAFC' };
-    if (step === 2) return { background: 'linear-gradient(180deg, #F8FAFC 0%, #002B5C 100%)' };
-    if (step >= 3 && step <= 8) return { background: '#001B3D' };
-    return { background: '#000B1A' }; // Step 9: Sucesso
+    if (step === 1 || step === 2) return { background: '#F8FAFC' };
+    if (step === 3) return { background: 'linear-gradient(180deg, #F8FAFC 0%, #001B3D 100%)' };
+    if (step >= 4 && step <= 6) return { background: '#001B3D' };
+    return { background: '#000B1A' }; // Step 7: Sucesso
   };
 
   const getCardContainerClass = () => {
     if (step === 1 || step === 2) {
       return "w-full max-w-2xl bg-white border border-[#E2E8F0] shadow-xl p-8 rounded-3xl z-10 relative overflow-hidden transition-all duration-350";
     }
-    if (step >= 3 && step <= 8) {
+    if (step >= 3 && step <= 6) {
       return "w-full max-w-2xl bg-[#002B5C]/90 border border-white/10 text-white shadow-2xl p-8 rounded-3xl z-10 relative overflow-hidden transition-all duration-350 backdrop-blur-md";
     }
-    // Step 9 (Veredito/Sucesso)
+    // Step 7 (Veredito/Sucesso)
     return "w-full max-w-2xl bg-[#00142C]/90 border-2 border-[#00E5FF] text-white shadow-[0_0_40px_rgba(0,229,255,0.25)] p-8 rounded-3xl z-10 relative overflow-hidden transition-all duration-350 backdrop-blur-md";
   };
 
@@ -197,7 +221,7 @@ export default function QuizApp() {
 
       <header className="w-full max-w-4xl flex justify-between items-center z-10 mb-6 px-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#0052CC] to-[#00E5FF] flex items-center justify-center font-bold text-slate-950 text-lg shadow-[0_0_12px_rgba(0,240,255,0.35)]">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#0052CC] to-[#00E5FF] flex items-center justify-center font-bold text-slate-955 text-lg shadow-[0_0_12px_rgba(0,240,255,0.35)]">
             O
           </div>
           <span className={`font-extrabold tracking-wider text-sm uppercase transition-colors duration-1000 ${
@@ -213,7 +237,7 @@ export default function QuizApp() {
 
       <div className={getCardContainerClass()}>
         
-        {step !== 8 && (
+        {step !== 6 && (
           <div className="mb-6 flex justify-center">
             <OctoMascot estadoAnimação={getMascotState()} />
           </div>
@@ -265,7 +289,7 @@ export default function QuizApp() {
                 <h2 className="text-2xl font-black text-slate-900">
                   Quem é você?
                 </h2>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-550">
                   Preencha seus dados para iniciar o diagnóstico da sua empresa.
                 </p>
               </div>
@@ -389,9 +413,9 @@ export default function QuizApp() {
               className="space-y-6"
             >
               <div className="space-y-1 text-center md:text-left">
-                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#00E5FF] font-bold">Passo 1 de 5</span>
+                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#00E5FF] font-bold">Passo 1 de 3</span>
                 <h2 className="text-2xl font-black text-white">Tamanho da Equipe</h2>
-                <p className="text-sm text-slate-300">Quantas pessoas atuam diretamente no atendimento ao cliente?</p>
+                <p className="text-sm text-slate-300">Quantas pessoas atuam diretamente no seu atendimento?</p>
               </div>
 
               <div className="quiz-grid">
@@ -424,49 +448,6 @@ export default function QuizApp() {
 
           {step === 4 && (
             <motion.div
-              key="volume"
-              variants={slideVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="space-y-6"
-            >
-              <div className="space-y-1 text-center md:text-left">
-                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#00E5FF] font-bold">Passo 2 de 5</span>
-                <h2 className="text-2xl font-black text-white">Volume Mensal de Vendas</h2>
-                <p className="text-sm text-slate-300">Quantos pedidos/leads sua operação gerencia em média por mês?</p>
-              </div>
-
-              <div className="quiz-grid">
-                {[
-                  { value: 'ate_100', label: 'Até 100 vendas' },
-                  { value: '101_500', label: '101 a 500 vendas' },
-                  { value: '501_2000', label: '501 a 2.000 vendas' },
-                  { value: 'mais_2000', label: 'Mais de 2.000 vendas' },
-                ].map((opt) => (
-                  <QuizCard
-                    key={opt.value}
-                    label={opt.label}
-                    isSelected={formData.volumeVendasMes === opt.value}
-                    onClick={() => handleSelectOption('volumeVendasMes', opt.value)}
-                    accentColor="cyan"
-                  />
-                ))}
-              </div>
-
-              <div className="flex gap-4 pt-4 border-t border-white/10">
-                <button
-                  onClick={handleBackStep}
-                  className="w-1/3 py-3.5 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors text-sm cursor-pointer"
-                >
-                  Voltar
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {step === 5 && (
-            <motion.div
               key="canal"
               variants={slideVariants}
               initial="initial"
@@ -475,17 +456,17 @@ export default function QuizApp() {
               className="space-y-6"
             >
               <div className="space-y-1 text-center md:text-left">
-                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#00E5FF] font-bold">Passo 3 de 5</span>
-                <h2 className="text-2xl font-black text-white">Canal Principal de Vendas</h2>
-                <p className="text-sm text-slate-300">Por onde seus clientes chegam com mais frequência?</p>
+                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#00E5FF] font-bold">Passo 2 de 3</span>
+                <h2 className="text-2xl font-black text-white">Canais de Atendimento Principais</h2>
+                <p className="text-sm text-slate-300">Por onde seus clientes entram em contato com mais frequência?</p>
               </div>
 
               <div className="quiz-grid">
                 {[
-                  { value: 'ecommerce', label: 'E-commerce / Loja Virtual' },
                   { value: 'whatsapp_instagram', label: 'WhatsApp e Instagram' },
-                  { value: 'loja_fisica', label: 'Loja Física / Ponto de Venda' },
-                  { value: 'b2b', label: 'B2B / Vendas Corporativas' },
+                  { value: 'ecommerce', label: 'E-commerce / Loja Virtual' },
+                  { value: 'loja_fisica', label: 'Loja Física / Omnichannel' },
+                  { value: 'b2b', label: 'Vendas Corporativas B2B' },
                 ].map((opt) => (
                   <QuizCard
                     key={opt.value}
@@ -508,93 +489,55 @@ export default function QuizApp() {
             </motion.div>
           )}
 
+          {step === 5 && (
+            <motion.div
+              key="ferramenta"
+              variants={slideVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="space-y-6"
+            >
+              <div className="space-y-1 text-center md:text-left">
+                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#00E5FF] font-bold">Passo 3 de 3</span>
+                <h2 className="text-2xl font-black text-white">Ferramenta Desejada para Otimização</h2>
+                <p className="text-sm text-slate-300">O que você gostaria de otimizar ou implementar na sua operação hoje?</p>
+              </div>
+
+              <div className="quiz-grid">
+                {[
+                  { value: 'automacao_vendas', label: 'Automação de Vendas e Recuperação de Vendas/Pix/Carrinho' },
+                  { value: 'centralizar', label: 'Centralização de Atendentes e WhatsApp em Número Único' },
+                  { value: 'metricas', label: 'Relatórios Gerenciais, SLAs e Dashboards' },
+                  { value: 'escala', label: 'Atendimento Corporativo Avançado em Escala' },
+                ].map((opt) => (
+                  <QuizCard
+                    key={opt.value}
+                    label={opt.label}
+                    isSelected={
+                      opt.value === 'automacao_vendas' ? formData.dorFinanceira === 'abandono_carrinho' :
+                      opt.value === 'centralizar' ? formData.maiorGargalo === 'centralizar_numero' :
+                      opt.value === 'metricas' ? formData.maiorGargalo === 'falta_metricas' :
+                      formData.equipeAtendimento === 'mais_15' && formData.faturamentoMensal === 'acima_500k'
+                    }
+                    onClick={() => handleSelectQ3(opt.value as any)}
+                    accentColor="cyan"
+                  />
+                ))}
+              </div>
+
+              <div className="flex gap-4 pt-4 border-t border-white/10">
+                <button
+                  onClick={handleBackStep}
+                  className="w-1/3 py-3.5 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors text-sm cursor-pointer"
+                >
+                  Voltar
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           {step === 6 && (
-            <motion.div
-              key="gargalo"
-              variants={slideVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="space-y-6"
-            >
-              <div className="space-y-1 text-center md:text-left">
-                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#00E5FF] font-bold">Passo 4 de 5</span>
-                <h2 className="text-2xl font-black text-white">Maior Gargalo Operacional</h2>
-                <p className="text-sm text-slate-300">O que mais atrasa ou impede a eficiência do seu time hoje?</p>
-              </div>
-
-              <div className="quiz-grid">
-                {[
-                  { value: 'demora_whatsapp', label: 'Demora no retorno de mensagens' },
-                  { value: 'centralizar_numero', label: 'Falta de número centralizado' },
-                  { value: 'falta_metricas', label: 'Falta de métricas e relatórios' },
-                  { value: 'perda_historico', label: 'Perda do histórico de conversas' },
-                ].map((opt) => (
-                  <QuizCard
-                    key={opt.value}
-                    label={opt.label}
-                    isSelected={formData.maiorGargalo === opt.value}
-                    onClick={() => handleSelectOption('maiorGargalo', opt.value)}
-                    accentColor="cyan"
-                  />
-                ))}
-              </div>
-
-              <div className="flex gap-4 pt-4 border-t border-white/10">
-                <button
-                  onClick={handleBackStep}
-                  className="w-1/3 py-3.5 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors text-sm cursor-pointer"
-                >
-                  Voltar
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {step === 7 && (
-            <motion.div
-              key="dor"
-              variants={slideVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="space-y-6"
-            >
-              <div className="space-y-1 text-center md:text-left">
-                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#00E5FF] font-bold">Passo 5 de 5</span>
-                <h2 className="text-2xl font-black text-white">Dor Financeira Crítica</h2>
-                <p className="text-sm text-slate-300">Onde sua empresa está perdendo mais faturamento?</p>
-              </div>
-
-              <div className="quiz-grid">
-                {[
-                  { value: 'abandono_carrinho', label: 'Abandono de carrinho' },
-                  { value: 'esquecimento_pix_boleto', label: 'Esquecimento de PIX / Boleto' },
-                  { value: 'saida_chat', label: 'Saída do chat sem compra' },
-                  { value: 'pos_venda', label: 'Atrasos no pós-venda' },
-                ].map((opt) => (
-                  <QuizCard
-                    key={opt.value}
-                    label={opt.label}
-                    isSelected={formData.dorFinanceira === opt.value}
-                    onClick={() => handleSelectOption('dorFinanceira', opt.value)}
-                    accentColor="cyan"
-                  />
-                ))}
-              </div>
-
-              <div className="flex gap-4 pt-4 border-t border-white/10">
-                <button
-                  onClick={handleBackStep}
-                  className="w-1/3 py-3.5 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors text-sm cursor-pointer"
-                >
-                  Voltar
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {step === 8 && (
             <motion.div
               key="loading"
               variants={slideVariants}
@@ -607,7 +550,7 @@ export default function QuizApp() {
                 <h2 className="text-2xl font-black text-[#00E5FF] glow-text-cyan animate-pulse">
                   Conectando Redes...
                 </h2>
-                <p className="text-sm text-slate-300 max-w-sm mx-auto">
+                <p className="text-sm text-slate-350 max-w-sm mx-auto">
                   O Polvo da Octadesk está processando sua árvore de decisão e salvando seus dados localmente...
                 </p>
               </div>
@@ -629,7 +572,7 @@ export default function QuizApp() {
             </motion.div>
           )}
 
-          {step === 9 && diagnostico && (
+          {step === 7 && diagnostico && (
             <motion.div
               key="results"
               variants={slideVariants}
@@ -651,8 +594,8 @@ export default function QuizApp() {
                 <OctoMascot estadoAnimação="success" />
               </div>
 
-              {/* Card de Destaque com Borda Brilhante Ciano Neon */}
-              <div className="p-8 rounded-2xl bg-[#00142C] border-2 border-[#00E5FF] w-full max-w-xl shadow-[0_0_30px_rgba(0,229,255,0.2)] flex flex-col items-center">
+              {/* Card Premium de Destaque com Borda Brilhante Ciano Neon */}
+              <div className="p-8 rounded-2xl bg-[#00142C] border-2 border-[#00E5FF] w-full max-w-xl shadow-[0_0_35px_rgba(0,229,255,0.25)] flex flex-col items-center">
                 <span className="text-5xl mb-4">
                   {diagnostico.destino === 'TRANSBORDO_COMERCIAL_URGENTE' && '👑'}
                   {diagnostico.destino === 'TRILHA_AUTOMACAO_ECOMMERCE' && '⚡'}
@@ -668,7 +611,7 @@ export default function QuizApp() {
                 </p>
 
                 <p className="text-sm text-slate-400 leading-relaxed border-t border-white/10 pt-4 w-full text-left">
-                  <span className="font-extrabold text-[#00E5FF] block mb-1 uppercase tracking-wider text-xs">FOCO DO PRODUTO:</span>
+                  <span className="font-extrabold text-[#00E5FF] block mb-1 uppercase tracking-wider text-xs">FOCO DA FERRAMENTA:</span>
                   {diagnostico.focoProduto}
                 </p>
 
@@ -692,7 +635,7 @@ export default function QuizApp() {
               <div className="w-full max-w-lg">
                 <button
                   onClick={handleReset}
-                  className="w-full md:w-3/4 py-6 text-2xl font-black rounded-2xl tracking-wide uppercase bg-[#00E5FF] text-slate-950 shadow-[0_0_20px_rgba(0,229,255,0.35)] hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 mx-auto block mt-8 cursor-pointer"
+                  className="w-full md:w-3/4 py-6 text-2xl font-black rounded-2xl tracking-wide uppercase bg-[#00E5FF] text-slate-955 shadow-[0_0_20px_rgba(0,229,255,0.35)] hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 mx-auto block mt-8 cursor-pointer"
                 >
                   Novo Atendimento
                 </button>
@@ -707,7 +650,7 @@ export default function QuizApp() {
         <button
           onClick={() => setIsAdminOpen(true)}
           className={`px-4 py-2 text-xs font-mono border border-transparent rounded-lg transition-colors cursor-pointer uppercase tracking-wider ${
-            step >= 3 ? 'text-[#8CA3C7] hover:text-white' : 'text-slate-400 hover:text-slate-650'
+            step >= 3 ? 'text-[#8CA3C7] hover:text-white' : 'text-slate-450 hover:text-slate-700'
           }`}
         >
           [ Painel de Controle ]

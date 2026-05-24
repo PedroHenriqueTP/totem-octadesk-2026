@@ -1,16 +1,17 @@
 import React from 'react';
 
 interface OctoMascotProps {
-  estadoAnimação?: 'floating' | 'thinking' | 'success';
+  estadoAnimação?: 'floating_light' | 'floating_dark' | 'thinking' | 'success';
   onClick?: () => void;
 }
 
-export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floating', onClick }) => {
-  // Cores dinâmicas com base no estado de animação/stage
-  const isDarkStage = estadoAnimação === 'thinking' || estadoAnimação === 'success';
-  const colorPrimary = isDarkStage ? '#00E5FF' : '#002B5C'; // Ciano neon vs Navy
-  const colorSecondary = isDarkStage ? '#0052CC' : '#FFFFFF'; // Brand blue vs Branco
-  const colorPupil = isDarkStage ? '#00E5FF' : '#002B5C';
+export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floating_light', onClick }) => {
+  // Configuração de cores com base no contraste necessário para cada fundo
+  const isLight = estadoAnimação === 'floating_light';
+  
+  const colorPrimary = isLight ? '#002B5C' : '#00E5FF'; // Navy vs Ciano Neon
+  const colorSecondary = isLight ? '#FFFFFF' : '#002B5C'; // Branco vs Navy
+  const colorPupil = isLight ? '#002B5C' : '#00E5FF'; // Navy vs Ciano Neon
 
   return (
     <div className="octo-container" onClick={onClick}>
@@ -20,7 +21,7 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
           justify-content: center;
           align-items: center;
           width: 100%;
-          max-width: 220px;
+          max-width: 200px;
           margin: 0 auto;
         }
         
@@ -33,24 +34,24 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
         }
 
         .octo-svg.thinking {
-          filter: drop-shadow(0px 0px 12px rgba(0, 229, 255, 0.5));
+          filter: drop-shadow(0px 0px 15px rgba(0, 229, 255, 0.6));
         }
 
         .octo-svg.success {
-          filter: drop-shadow(0px 0px 25px rgba(0, 229, 255, 0.8));
-          animation: flatFloat 2s ease-in-out infinite, flatPulse 0.6s ease-in-out forwards;
+          filter: drop-shadow(0px 0px 30px rgba(0, 229, 255, 0.9));
+          animation: flatFloat 2s ease-in-out infinite, successPulse 0.6s ease-in-out forwards;
         }
 
         @keyframes flatFloat {
           0%, 100% {
-            transform: translateY(0px) scale(1);
+            transform: translateY(0px);
           }
           50% {
-            transform: translateY(-5px) scale(1.02);
+            transform: translateY(-5px);
           }
         }
 
-        @keyframes flatPulse {
+        @keyframes successPulse {
           0% { transform: scale(1); }
           50% { transform: scale(1.1); }
           100% { transform: scale(1.05); }
@@ -63,20 +64,14 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
         fill="none" 
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Tentáculos simétricos geométricos planos (Thick rounded strokes) */}
-        <g stroke={colorPrimary} strokeWidth="12" strokeLinecap="round" opacity="0.9">
-          {/* Tentáculo Esquerdo 1 */}
+        {/* Tentáculos geométricos planos simétricos */}
+        <g stroke={colorPrimary} strokeWidth="12" strokeLinecap="round" opacity="0.9" className="transition-all duration-500">
           <path d="M 65 110 C 35 130, 25 160, 35 185" />
-          {/* Tentáculo Esquerdo 2 */}
           <path d="M 82 120 C 65 145, 60 170, 70 190" />
-          {/* Tentáculo Esquerdo 3 */}
           <path d="M 98 125 C 90 155, 90 175, 95 192" />
           
-          {/* Tentáculo Direito 1 */}
           <path d="M 135 110 C 165 130, 175 160, 165 185" />
-          {/* Tentáculo Direito 2 */}
           <path d="M 118 120 C 135 145, 140 170, 130 190" />
-          {/* Tentáculo Direito 3 */}
           <path d="M 102 125 C 110 155, 110 175, 105 192" />
         </g>
 
@@ -91,11 +86,9 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
 
         {/* Olhos concêntricos vazados */}
         <g className="transition-colors duration-500">
-          {/* Olho Esquerdo */}
           <circle cx="82" cy="82" r="13" fill={colorSecondary} />
           <circle cx="82" cy="82" r="5.5" fill={colorPupil} />
 
-          {/* Olho Direito */}
           <circle cx="118" cy="82" r="13" fill={colorSecondary} />
           <circle cx="118" cy="82" r="5.5" fill={colorPupil} />
         </g>
@@ -106,6 +99,7 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
           stroke={colorSecondary} 
           strokeWidth="3.5" 
           strokeLinecap="round" 
+          className="transition-colors duration-500"
         />
       </svg>
     </div>
