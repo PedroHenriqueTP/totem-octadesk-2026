@@ -26,6 +26,7 @@ export default function QuizApp() {
     dorFinanceira: "" as any
   });
 
+  const [selectedCanais, setSelectedCanais] = useState<string[]>([]);
   const [diagnostico, setDiagnostico] = useState<DiagnosticoResultado | null>(null);
 
   // Efeito de animação de progresso do loading (Step 6)
@@ -52,6 +53,27 @@ export default function QuizApp() {
 
   const handleInputChange = (field: keyof LeadData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleToggleCanal = (value: string) => {
+    setSelectedCanais((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
+  };
+
+  const handleConfirmCanais = () => {
+    let principal: any = 'whatsapp_instagram';
+    if (selectedCanais.includes('ecommerce')) {
+      principal = 'ecommerce';
+    } else if (selectedCanais.includes('whatsapp_instagram')) {
+      principal = 'whatsapp_instagram';
+    } else if (selectedCanais.includes('loja_fisica')) {
+      principal = 'loja_fisica';
+    } else if (selectedCanais.includes('b2b')) {
+      principal = 'b2b';
+    }
+    handleInputChange('canalPrincipal', principal);
+    handleNextStep();
   };
 
   const handleNextStep = () => {
@@ -212,7 +234,7 @@ export default function QuizApp() {
       {/* Contêiner de cartão principal com estilo de vidro claro e estável */}
       <div className="w-full max-w-2xl bg-white border border-[#E2E8F0] shadow-xl p-8 rounded-3xl z-10 relative overflow-hidden transition-all duration-350">
         
-        {step !== 6 && (
+        {step !== 6 && step !== 7 && (
           <div className="mb-6 flex justify-center">
             <OctoMascot estadoAnimação={getMascotState()} />
           </div>
@@ -390,7 +412,7 @@ export default function QuizApp() {
                 <p className="text-sm text-slate-500">Quantas pessoas atuam diretamente no seu atendimento?</p>
               </div>
 
-              <div className="quiz-grid">
+              <div className="grid-solucoes">
                 {[
                   { value: 'eu_mais_um', label: 'Eu + 1 colaborador' },
                   { value: '3_5', label: '3 a 5 colaboradores' },
@@ -430,10 +452,10 @@ export default function QuizApp() {
               <div className="space-y-1 text-center md:text-left">
                 <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#0052CC] font-bold">Passo 2 de 3</span>
                 <h2 className="text-2xl font-black text-slate-900">Canais de Atendimento Principais</h2>
-                <p className="text-sm text-slate-500">Por onde seus clientes entram em contato com mais frequência?</p>
+                <p className="text-sm text-slate-500">Por onde seus clientes entram em contato com mais frequência? (Selecione todos que se aplicam)</p>
               </div>
 
-              <div className="quiz-grid">
+              <div className="grid-solucoes">
                 {[
                   { value: 'whatsapp_instagram', label: 'WhatsApp & Instagram' },
                   { value: 'ecommerce', label: 'E-commerce' },
@@ -443,8 +465,8 @@ export default function QuizApp() {
                   <QuizCard
                     key={opt.value}
                     label={opt.label}
-                    isSelected={formData.canalPrincipal === opt.value}
-                    onClick={() => handleSelectOption('canalPrincipal', opt.value)}
+                    isSelected={selectedCanais.includes(opt.value)}
+                    onClick={() => handleToggleCanal(opt.value)}
                     accentColor="cyan"
                   />
                 ))}
@@ -456,6 +478,20 @@ export default function QuizApp() {
                   className="w-1/3 py-3.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-colors text-sm cursor-pointer"
                 >
                   Voltar
+                </button>
+                <button
+                  onClick={handleConfirmCanais}
+                  disabled={selectedCanais.length === 0}
+                  className={`w-2/3 py-3.5 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 ${
+                    selectedCanais.length > 0
+                      ? "bg-[#00E5FF] text-slate-955 hover:bg-[#00d0e6] shadow-[0_0_20px_rgba(0,240,255,0.2)] cursor-pointer"
+                      : "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
+                  }`}
+                >
+                  Confirmar e Continuar
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                  </svg>
                 </button>
               </div>
             </motion.div>
@@ -472,25 +508,36 @@ export default function QuizApp() {
             >
               <div className="space-y-1 text-center md:text-left">
                 <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#0052CC] font-bold">Passo 3 de 3</span>
-                <h2 className="text-2xl font-black text-slate-900">Objetivo de Otimização</h2>
-                <p className="text-sm text-slate-500">O que você gostaria de otimizar ou implementar na sua operação hoje?</p>
+                <h2 className="text-2xl font-black text-slate-900">Conheça as Ferramentas</h2>
+                <p className="text-sm text-slate-500">Selecione uma de nossas soluções para ver o diagnóstico e a demonstração:</p>
               </div>
 
-              <div className="quiz-grid">
+              <div className="grid-solucoes flex flex-col gap-4">
                 {[
-                  { value: 'automacao_vendas', label: 'Automação de fluxos' },
-                  { value: 'centralizar', label: 'Centralização de números' },
-                  { value: 'metricas', label: 'Relatórios e dashboards' },
-                  { value: 'escala', label: 'Atendimento em escala' },
+                  { 
+                    value: 'automacao_vendas', 
+                    label: 'Recuperação de Carrinho',
+                    description: 'Automatize cobranças via WhatsApp, recupere PIX, boletos e carrinhos abandonados de forma 100% automatizada.'
+                  },
+                  { 
+                    value: 'centralizar', 
+                    label: 'Centralização de Números',
+                    description: 'Conecte múltiplos atendentes em um único número de WhatsApp de forma organizada, dividindo por departamentos.'
+                  },
+                  { 
+                    value: 'metricas', 
+                    label: 'Dashboard Gerencial',
+                    description: 'Acompanhe métricas de atendimento em tempo real, controle SLAs de resposta e veja a produtividade de cada colaborador.'
+                  },
                 ].map((opt) => (
                   <QuizCard
                     key={opt.value}
                     label={opt.label}
+                    description={opt.description}
                     isSelected={
                       opt.value === 'automacao_vendas' ? formData.dorFinanceira === 'abandono_carrinho' :
                       opt.value === 'centralizar' ? formData.maiorGargalo === 'centralizar_numero' :
-                      opt.value === 'metricas' ? formData.maiorGargalo === 'falta_metricas' :
-                      formData.equipeAtendimento === 'mais_15' && formData.faturamentoMensal === 'acima_500k'
+                      formData.maiorGargalo === 'falta_metricas'
                     }
                     onClick={() => handleSelectQ3(opt.value as any)}
                     accentColor="cyan"

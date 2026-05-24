@@ -23,7 +23,7 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
           height: auto;
           transform-origin: center;
           transition: all 0.5s ease-in-out;
-          animation: flatFloat 4s ease-in-out infinite;
+          animation: float 4s ease-in-out infinite;
         }
 
         .octo-svg.thinking {
@@ -32,15 +32,15 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
 
         .octo-svg.success {
           filter: drop-shadow(0px 0px 30px rgba(0, 229, 255, 0.9));
-          animation: flatFloat 2s ease-in-out infinite, successPulse 0.6s ease-in-out forwards;
+          animation: float 2s ease-in-out infinite, successPulse 0.6s ease-in-out forwards;
         }
 
-        @keyframes flatFloat {
+        @keyframes float {
           0%, 100% {
             transform: translateY(0px);
           }
           50% {
-            transform: translateY(-8px);
+            transform: translateY(-4px);
           }
         }
 
