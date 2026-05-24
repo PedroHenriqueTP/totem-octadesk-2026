@@ -1,0 +1,22 @@
+{
+  "name": "Totem de Ativação Octadesk",
+  "short_name": "Totem Octadesk",
+  "description": "Interface para totens de ativação focada em tablets e totens verticais.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F172A",
+  "theme_color": "#0284C7",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

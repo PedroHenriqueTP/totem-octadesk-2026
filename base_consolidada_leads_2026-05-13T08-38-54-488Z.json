@@ -1,0 +1,30 @@
+[
+  {
+    "id": "1",
+    "name": "Teste 1",
+    "email": "teste1@example.com",
+    "phone": "11999999999",
+    "answers": {
+      "channel": "WhatsApp Manual",
+      "pain": "Atendimento Lento",
+      "teamSize": "5-20 pessoas"
+    },
+    "profile": "medium",
+    "optIn": true,
+    "timestamp": "2026-05-13T08:00:00.000Z"
+  },
+  {
+    "id": "2",
+    "name": "Teste 2",
+    "email": "teste2@example.com",
+    "phone": "11888888888",
+    "answers": {
+      "channel": "WhatsApp Manual",
+      "pain": "Carrinho Abandonado",
+      "teamSize": "Mais de 20 pessoas"
+    },
+    "profile": "hot",
+    "optIn": true,
+    "timestamp": "2026-05-13T08:05:00.000Z"
+  }
+]

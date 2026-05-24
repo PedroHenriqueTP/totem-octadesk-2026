@@ -1,14 +1,18 @@
 {
-  "name": "temp-app",
+  "name": "projeto-ativacao-ocatadesk",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
+    "dexie": "^4.4.2",
+    "framer-motion": "^12.38.0",
+    "lottie-react": "^2.4.1",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4"

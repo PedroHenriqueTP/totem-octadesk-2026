@@ -1,0 +1,43 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bodyGradient" x1="120" y1="40" x2="120" y2="135" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#0052CC" />
+      <stop offset="100%" stopColor="#1E293B" />
+    </linearGradient>
+    <linearGradient id="headsetGrad" x1="50" y1="70" x2="190" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#64748B" />
+      <stop offset="50%" stopColor="#94A3B8" />
+      <stop offset="100%" stopColor="#475569" />
+    </linearGradient>
+    <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <g stroke="#00F0FF" strokeWidth="5.5" strokeLinecap="round" opacity="0.85">
+    <path d="M 75 115 Q 60 155 35 205" />
+    <path d="M 93 115 Q 85 155 60 205" />
+    <path d="M 111 115 Q 110 155 85 205" />
+    <path d="M 129 115 Q 130 155 155 205" />
+    <path d="M 147 115 Q 155 155 180 205" />
+    <path d="M 165 115 Q 180 155 205 205" />
+  </g>
+
+  <path d="M 65 95 C 65 45, 175 45, 175 95 C 175 125, 160 135, 120 135 C 80 135, 65 125, 65 95 Z" fill="url(#bodyGradient)" stroke="#00F0FF" strokeWidth="1.5" />
+
+  <path d="M 64 80 A 62 62 0 0 1 176 80" stroke="url(#headsetGrad)" strokeWidth="6" fill="none" />
+
+  <rect x="52" y="78" width="14" height="28" rx="4" fill="#475569" stroke="#94A3B8" strokeWidth="2.5" />
+  <rect x="174" y="78" width="14" height="28" rx="4" fill="#475569" stroke="#94A3B8" strokeWidth="2.5" />
+
+  <path d="M 59 104 Q 70 128 95 122" stroke="#94A3B8" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+  <circle cx="95" cy="122" r="3.5" fill="#475569" stroke="#94A3B8" strokeWidth="1.5" />
+
+  <rect x="85" y="80" width="70" height="24" rx="4" fill="#070A12" stroke="#00F0FF" strokeWidth="2.2" />
+
+  <circle cx="104" cy="92" r="3.5" fill="#00F0FF" />
+  <circle cx="136" cy="92" r="3.5" fill="#00F0FF" />
+  <path d="M 100 86 Q 104 88 108 86" stroke="#00F0FF" strokeWidth="1.5" strokeLinecap="round" />
+  <path d="M 132 86 Q 136 88 140 86" stroke="#00F0FF" strokeWidth="1.5" strokeLinecap="round" />
+</svg>
