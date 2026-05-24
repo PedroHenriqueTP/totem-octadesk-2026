@@ -174,7 +174,7 @@ export default function QuizApp() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 transition-all duration-1000 ease-in-out relative overflow-hidden bg-[#F8FAFC]">
+    <main className="flex min-h-screen flex-col items-center justify-center p-6 transition-all duration-1000 ease-in-out relative overflow-hidden bg-[#001B3D]">
       
       {/* Elementos visuais abstratos de fundo (Originais e estáveis) */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-15">
@@ -222,11 +222,11 @@ export default function QuizApp() {
           <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#0052CC] to-[#00E5FF] flex items-center justify-center font-bold text-slate-955 text-lg shadow-[0_0_12px_rgba(0,240,255,0.35)]">
             O
           </div>
-          <span className="font-extrabold tracking-wider text-sm uppercase text-slate-900">
+          <span className="font-extrabold tracking-wider text-sm uppercase text-white animate-pulse-slow">
             Octadesk <span className="text-[#00E5FF] font-light">Interactive</span>
           </span>
         </div>
-        <span className="text-xs font-bold text-[#00E5FF] uppercase tracking-[0.2em] bg-[#F0FDFA] px-3 py-1.5 rounded-full border border-[#00E5FF]/20">
+        <span className="text-xs font-bold text-[#00E5FF] uppercase tracking-[0.2em] bg-white/5 px-3 py-1.5 rounded-full border border-[#00E5FF]/20 backdrop-blur-sm">
           Fórum E-commerce Brasil 2026
         </span>
       </header>
@@ -516,15 +516,15 @@ export default function QuizApp() {
                 {[
                   { 
                     value: 'automacao_vendas', 
-                    label: 'Você já tem automação de fluxos e recuperação de PIX/Carrinho abandonado?'
+                    label: 'Sua operação perde vendas por falta de disparos automáticos e recuperação de PIX/Carrinho abandonado?'
                   },
                   { 
                     value: 'centralizar', 
-                    label: 'Seu time sofre para centralizar múltiplos atendentes em um único número de WhatsApp?'
+                    label: 'Seu time sofre para centralizar múltiplos atendentes em um único número de WhatsApp corporativo?'
                   },
                   { 
                     value: 'metricas', 
-                    label: 'Sua gestão sente falta de relatórios em tempo real, dashboards e controle de SLAs?'
+                    label: 'Sua gestão carece de relatórios em tempo real, monitoramento de dashboards e controle rígido de SLAs?'
                   },
                 ].map((opt) => (
                   <QuizCard
