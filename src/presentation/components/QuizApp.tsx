@@ -18,19 +18,20 @@ export default function QuizApp() {
     empresa: "",
     email: "",
     telefone: "",
-    faturamentoMensal: "" as any,
+    faturamentoMensal: "ate_50k", // Valor padrão padrão para compatibilidade com o motor
     volumeVendasMes: "" as any,
     equipeAtendimento: "" as any,
-    maiorGargalo: "" as any,
     canalPrincipal: "" as any,
+    maiorGargalo: "" as any,
     dorFinanceira: "" as any
   });
 
   const [diagnostico, setDiagnostico] = useState<DiagnosticoResultado | null>(null);
 
+  // Efeito de animação de progresso do loading (Step 8)
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (step === 9) {
+    if (step === 8) {
       setProgress(0);
       const startTime = Date.now();
       const duration = 2000;
@@ -42,7 +43,7 @@ export default function QuizApp() {
 
         if (elapsed >= duration) {
           clearInterval(interval);
-          setStep(10);
+          setStep(9); // Vai para o resultado final
         }
       }, 30);
     }
@@ -71,13 +72,20 @@ export default function QuizApp() {
   const handleSelectOption = (field: keyof LeadData, value: string) => {
     handleInputChange(field, value);
     
+    // Se for a última pergunta do quiz, calcula o diagnóstico e salva localmente
     if (field === 'dorFinanceira') {
       const updatedData = { ...formData, [field]: value } as LeadData;
+      
+      // Ajuste de compatibilidade para acionar o transbordo urgente comercial no motor se equipe for > 15
+      if (updatedData.equipeAtendimento === 'mais_15') {
+        updatedData.faturamentoMensal = 'acima_500k';
+      }
+
       const result = processarDiagnosticoLead(updatedData);
       setDiagnostico(result);
       LocalStorageManager.salvarLeadLocal(updatedData, result);
       setTimeout(() => {
-        setStep(9);
+        setStep(8); // Tela de carregamento/processamento
       }, 300);
     } else {
       setTimeout(() => {
@@ -87,27 +95,49 @@ export default function QuizApp() {
   };
 
   const handleReset = () => {
-    setFormData({
-      nome: "",
-      empresa: "",
-      email: "",
-      telefone: "",
-      faturamentoMensal: "" as any,
-      volumeVendasMes: "" as any,
-      equipeAtendimento: "" as any,
-      maiorGargalo: "" as any,
-      canalPrincipal: "" as any,
-      dorFinanceira: "" as any
-    });
-    setDiagnostico(null);
-    setProgress(0);
-    setStep(1);
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    } else {
+      setFormData({
+        nome: "",
+        empresa: "",
+        email: "",
+        telefone: "",
+        faturamentoMensal: "ate_50k",
+        volumeVendasMes: "" as any,
+        equipeAtendimento: "" as any,
+        canalPrincipal: "" as any,
+        maiorGargalo: "" as any,
+        dorFinanceira: "" as any
+      });
+      setDiagnostico(null);
+      setProgress(0);
+      setStep(1);
+    }
   };
 
   const getMascotState = (): 'floating' | 'thinking' | 'success' => {
-    if (step === 9) return 'thinking';
-    if (step === 10) return 'success';
+    if (step === 8) return 'thinking';
+    if (step === 9) return 'success';
     return 'floating';
+  };
+
+  const getBackgroundStyle = () => {
+    if (step === 1) return { background: '#F8FAFC' };
+    if (step === 2) return { background: 'linear-gradient(180deg, #F8FAFC 0%, #002B5C 100%)' };
+    if (step >= 3 && step <= 8) return { background: '#001B3D' };
+    return { background: '#000B1A' }; // Step 9: Sucesso
+  };
+
+  const getCardContainerClass = () => {
+    if (step === 1 || step === 2) {
+      return "w-full max-w-2xl bg-white border border-[#E2E8F0] shadow-xl p-8 rounded-3xl z-10 relative overflow-hidden transition-all duration-350";
+    }
+    if (step >= 3 && step <= 8) {
+      return "w-full max-w-2xl bg-[#002B5C]/90 border border-white/10 text-white shadow-2xl p-8 rounded-3xl z-10 relative overflow-hidden transition-all duration-350 backdrop-blur-md";
+    }
+    // Step 9 (Veredito/Sucesso)
+    return "w-full max-w-2xl bg-[#00142C]/90 border-2 border-[#00E5FF] text-white shadow-[0_0_40px_rgba(0,229,255,0.25)] p-8 rounded-3xl z-10 relative overflow-hidden transition-all duration-350 backdrop-blur-md";
   };
 
   const slideVariants = {
@@ -117,11 +147,16 @@ export default function QuizApp() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 text-slate-800 relative overflow-hidden bg-[#F8FAFC]">
+    <main 
+      style={getBackgroundStyle()}
+      className="flex min-h-screen flex-col items-center justify-center p-6 transition-all duration-1000 ease-in-out relative overflow-hidden"
+    >
       
-      {/* Elementos visuais abstratos de fundo (Originais) */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-0 left-0 w-64 h-64 opacity-15">
+      {/* Elementos visuais abstratos de fundo (Fadem quando entra no abismo) */}
+      <div className={`absolute inset-0 pointer-events-none z-0 overflow-hidden transition-opacity duration-1000 ${
+        step >= 3 ? 'opacity-5' : 'opacity-15'
+      }`}>
+        <div className="absolute top-0 left-0 w-64 h-64">
           <svg width="100%" height="100%" viewBox="0 0 200 200" fill="none">
             <path d="M 0 0 C 40 40, 100 20, 140 80 C 160 110, 150 140, 110 160 C 90 170, 70 150, 80 130 C 90 110, 120 120, 110 90 C 100 60, 50 60, 0 0 Z" fill="url(#tentacleGrad)" />
             <defs>
@@ -134,13 +169,13 @@ export default function QuizApp() {
           </svg>
         </div>
 
-        <div className="absolute top-0 right-0 w-64 h-64 opacity-15 transform scale-x-[-1]">
+        <div className="absolute top-0 right-0 w-64 h-64 transform scale-x-[-1]">
           <svg width="100%" height="100%" viewBox="0 0 200 200" fill="none">
             <path d="M 0 0 C 40 40, 100 20, 140 80 C 160 110, 150 140, 110 160 C 90 170, 70 150, 80 130 C 90 110, 120 120, 110 90 C 100 60, 50 60, 0 0 Z" fill="url(#tentacleGrad)" />
           </svg>
         </div>
 
-        <div className="absolute bottom-0 left-0 w-64 h-64 opacity-10 transform scale-y-[-1]">
+        <div className="absolute bottom-0 left-0 w-64 h-64 transform scale-y-[-1]">
           <svg width="100%" height="100%" viewBox="0 0 200 200" fill="none">
             <path d="M 0 0 C 40 40, 100 20, 140 80 C 160 110, 150 140, 110 160 C 90 170, 70 150, 80 130 C 90 110, 120 120, 110 90 C 100 60, 50 60, 0 0 Z" fill="url(#tentacleGrad2)" />
             <defs>
@@ -153,7 +188,7 @@ export default function QuizApp() {
           </svg>
         </div>
 
-        <div className="absolute bottom-0 right-0 w-64 h-64 opacity-10 transform scale-x-[-1] scale-y-[-1]">
+        <div className="absolute bottom-0 right-0 w-64 h-64 transform scale-x-[-1] scale-y-[-1]">
           <svg width="100%" height="100%" viewBox="0 0 200 200" fill="none">
             <path d="M 0 0 C 40 40, 100 20, 140 80 C 160 110, 150 140, 110 160 C 90 170, 70 150, 80 130 C 90 110, 120 120, 110 90 C 100 60, 50 60, 0 0 Z" fill="url(#tentacleGrad2)" />
           </svg>
@@ -162,10 +197,12 @@ export default function QuizApp() {
 
       <header className="w-full max-w-4xl flex justify-between items-center z-10 mb-6 px-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#0052CC] to-[#00E5FF] flex items-center justify-center font-bold text-slate-955 text-lg shadow-[0_0_12px_rgba(0,240,255,0.35)]">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#0052CC] to-[#00E5FF] flex items-center justify-center font-bold text-slate-950 text-lg shadow-[0_0_12px_rgba(0,240,255,0.35)]">
             O
           </div>
-          <span className="font-extrabold tracking-wider text-sm uppercase text-slate-900">
+          <span className={`font-extrabold tracking-wider text-sm uppercase transition-colors duration-1000 ${
+            step >= 3 ? 'text-white' : 'text-slate-900'
+          }`}>
             Octadesk <span className="text-[#00E5FF] font-light">Interactive</span>
           </span>
         </div>
@@ -174,9 +211,9 @@ export default function QuizApp() {
         </span>
       </header>
 
-      <div className="w-full max-w-2xl bg-white border border-[#E2E8F0] shadow-xl p-8 rounded-3xl z-10 relative overflow-hidden transition-all duration-350">
+      <div className={getCardContainerClass()}>
         
-        {step !== 9 && step !== 10 && (
+        {step !== 8 && (
           <div className="mb-6 flex justify-center">
             <OctoMascot estadoAnimação={getMascotState()} />
           </div>
@@ -344,92 +381,6 @@ export default function QuizApp() {
 
           {step === 3 && (
             <motion.div
-              key="faturamento"
-              variants={slideVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="space-y-6"
-            >
-              <div className="space-y-1 text-center md:text-left">
-                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#0052CC] font-bold">Passo 1 de 6</span>
-                <h2 className="text-2xl font-black text-slate-900">Faturamento Mensal Estimado</h2>
-                <p className="text-sm text-slate-500">Qual é a faixa de faturamento mensal atual da sua operação?</p>
-              </div>
-
-              <div className="quiz-grid">
-                {[
-                  { value: 'ate_50k', label: 'Até R$ 50.000' },
-                  { value: '51k_200k', label: 'R$ 51.000 a R$ 200.000' },
-                  { value: '201k_500k', label: 'R$ 201.000 a R$ 500.000' },
-                  { value: 'acima_500k', label: 'Acima de R$ 500.000' },
-                ].map((opt) => (
-                  <QuizCard
-                    key={opt.value}
-                    label={opt.label}
-                    isSelected={formData.faturamentoMensal === opt.value}
-                    onClick={() => handleSelectOption('faturamentoMensal', opt.value)}
-                    accentColor="cyan"
-                  />
-                ))}
-              </div>
-
-              <div className="flex gap-4 pt-4 border-t border-slate-100">
-                <button
-                  onClick={handleBackStep}
-                  className="w-1/3 py-3.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-colors text-sm cursor-pointer"
-                >
-                  Voltar
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {step === 4 && (
-            <motion.div
-              key="volume"
-              variants={slideVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="space-y-6"
-            >
-              <div className="space-y-1 text-center md:text-left">
-                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#0052CC] font-bold">Passo 2 de 6</span>
-                <h2 className="text-2xl font-black text-slate-900">Volume Mensal de Vendas</h2>
-                <p className="text-sm text-slate-500">Quantos pedidos/leads sua operação gerencia em média por mês?</p>
-              </div>
-
-              <div className="quiz-grid">
-                {[
-                  { value: 'ate_100', label: 'Até 100 vendas' },
-                  { value: '101_500', label: '101 a 500 vendas' },
-                  { value: '501_2000', label: '501 a 2.000 vendas' },
-                  { value: 'mais_2000', label: 'Mais de 2.000 vendas' },
-                ].map((opt) => (
-                  <QuizCard
-                    key={opt.value}
-                    label={opt.label}
-                    isSelected={formData.volumeVendasMes === opt.value}
-                    onClick={() => handleSelectOption('volumeVendasMes', opt.value)}
-                    accentColor="cyan"
-                  />
-                ))}
-              </div>
-
-              <div className="flex gap-4 pt-4 border-t border-slate-100">
-                <button
-                  onClick={handleBackStep}
-                  className="w-1/3 py-3.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-colors text-sm cursor-pointer"
-                >
-                  Voltar
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {step === 5 && (
-            <motion.div
               key="equipe"
               variants={slideVariants}
               initial="initial"
@@ -438,9 +389,9 @@ export default function QuizApp() {
               className="space-y-6"
             >
               <div className="space-y-1 text-center md:text-left">
-                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#0052CC] font-bold">Passo 3 de 6</span>
-                <h2 className="text-2xl font-black text-slate-900">Tamanho da Equipe</h2>
-                <p className="text-sm text-slate-550">Quantas pessoas atuam diretamente no atendimento ao cliente?</p>
+                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#00E5FF] font-bold">Passo 1 de 5</span>
+                <h2 className="text-2xl font-black text-white">Tamanho da Equipe</h2>
+                <p className="text-sm text-slate-300">Quantas pessoas atuam diretamente no atendimento ao cliente?</p>
               </div>
 
               <div className="quiz-grid">
@@ -460,10 +411,10 @@ export default function QuizApp() {
                 ))}
               </div>
 
-              <div className="flex gap-4 pt-4 border-t border-slate-100">
+              <div className="flex gap-4 pt-4 border-t border-white/10">
                 <button
                   onClick={handleBackStep}
-                  className="w-1/3 py-3.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-colors text-sm cursor-pointer"
+                  className="w-1/3 py-3.5 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors text-sm cursor-pointer"
                 >
                   Voltar
                 </button>
@@ -471,7 +422,50 @@ export default function QuizApp() {
             </motion.div>
           )}
 
-          {step === 6 && (
+          {step === 4 && (
+            <motion.div
+              key="volume"
+              variants={slideVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="space-y-6"
+            >
+              <div className="space-y-1 text-center md:text-left">
+                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#00E5FF] font-bold">Passo 2 de 5</span>
+                <h2 className="text-2xl font-black text-white">Volume Mensal de Vendas</h2>
+                <p className="text-sm text-slate-300">Quantos pedidos/leads sua operação gerencia em média por mês?</p>
+              </div>
+
+              <div className="quiz-grid">
+                {[
+                  { value: 'ate_100', label: 'Até 100 vendas' },
+                  { value: '101_500', label: '101 a 500 vendas' },
+                  { value: '501_2000', label: '501 a 2.000 vendas' },
+                  { value: 'mais_2000', label: 'Mais de 2.000 vendas' },
+                ].map((opt) => (
+                  <QuizCard
+                    key={opt.value}
+                    label={opt.label}
+                    isSelected={formData.volumeVendasMes === opt.value}
+                    onClick={() => handleSelectOption('volumeVendasMes', opt.value)}
+                    accentColor="cyan"
+                  />
+                ))}
+              </div>
+
+              <div className="flex gap-4 pt-4 border-t border-white/10">
+                <button
+                  onClick={handleBackStep}
+                  className="w-1/3 py-3.5 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors text-sm cursor-pointer"
+                >
+                  Voltar
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 5 && (
             <motion.div
               key="canal"
               variants={slideVariants}
@@ -481,9 +475,9 @@ export default function QuizApp() {
               className="space-y-6"
             >
               <div className="space-y-1 text-center md:text-left">
-                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#0052CC] font-bold">Passo 4 de 6</span>
-                <h2 className="text-2xl font-black text-slate-900">Canal Principal de Vendas</h2>
-                <p className="text-sm text-slate-550">Por onde seus clientes chegam com mais frequência?</p>
+                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#00E5FF] font-bold">Passo 3 de 5</span>
+                <h2 className="text-2xl font-black text-white">Canal Principal de Vendas</h2>
+                <p className="text-sm text-slate-300">Por onde seus clientes chegam com mais frequência?</p>
               </div>
 
               <div className="quiz-grid">
@@ -503,10 +497,10 @@ export default function QuizApp() {
                 ))}
               </div>
 
-              <div className="flex gap-4 pt-4 border-t border-slate-100">
+              <div className="flex gap-4 pt-4 border-t border-white/10">
                 <button
                   onClick={handleBackStep}
-                  className="w-1/3 py-3.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-colors text-sm cursor-pointer"
+                  className="w-1/3 py-3.5 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors text-sm cursor-pointer"
                 >
                   Voltar
                 </button>
@@ -514,7 +508,7 @@ export default function QuizApp() {
             </motion.div>
           )}
 
-          {step === 7 && (
+          {step === 6 && (
             <motion.div
               key="gargalo"
               variants={slideVariants}
@@ -524,9 +518,9 @@ export default function QuizApp() {
               className="space-y-6"
             >
               <div className="space-y-1 text-center md:text-left">
-                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#0052CC] font-bold">Passo 5 de 6</span>
-                <h2 className="text-2xl font-black text-slate-900">Maior Gargalo Operacional</h2>
-                <p className="text-sm text-slate-550">O que mais atrasa ou impede a eficiência do seu time hoje?</p>
+                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#00E5FF] font-bold">Passo 4 de 5</span>
+                <h2 className="text-2xl font-black text-white">Maior Gargalo Operacional</h2>
+                <p className="text-sm text-slate-300">O que mais atrasa ou impede a eficiência do seu time hoje?</p>
               </div>
 
               <div className="quiz-grid">
@@ -546,10 +540,10 @@ export default function QuizApp() {
                 ))}
               </div>
 
-              <div className="flex gap-4 pt-4 border-t border-slate-100">
+              <div className="flex gap-4 pt-4 border-t border-white/10">
                 <button
                   onClick={handleBackStep}
-                  className="w-1/3 py-3.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-colors text-sm cursor-pointer"
+                  className="w-1/3 py-3.5 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors text-sm cursor-pointer"
                 >
                   Voltar
                 </button>
@@ -557,7 +551,7 @@ export default function QuizApp() {
             </motion.div>
           )}
 
-          {step === 8 && (
+          {step === 7 && (
             <motion.div
               key="dor"
               variants={slideVariants}
@@ -567,9 +561,9 @@ export default function QuizApp() {
               className="space-y-6"
             >
               <div className="space-y-1 text-center md:text-left">
-                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#0052CC] font-bold">Passo 6 de 6</span>
-                <h2 className="text-2xl font-black text-slate-900">Dor Financeira Crítica</h2>
-                <p className="text-sm text-slate-550">Onde sua empresa está perdendo mais faturamento?</p>
+                <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#00E5FF] font-bold">Passo 5 de 5</span>
+                <h2 className="text-2xl font-black text-white">Dor Financeira Crítica</h2>
+                <p className="text-sm text-slate-300">Onde sua empresa está perdendo mais faturamento?</p>
               </div>
 
               <div className="quiz-grid">
@@ -589,10 +583,10 @@ export default function QuizApp() {
                 ))}
               </div>
 
-              <div className="flex gap-4 pt-4 border-t border-slate-100">
+              <div className="flex gap-4 pt-4 border-t border-white/10">
                 <button
                   onClick={handleBackStep}
-                  className="w-1/3 py-3.5 rounded-xl border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-colors text-sm cursor-pointer"
+                  className="w-1/3 py-3.5 rounded-xl border border-white/20 text-white font-bold hover:bg-white/5 transition-colors text-sm cursor-pointer"
                 >
                   Voltar
                 </button>
@@ -600,7 +594,7 @@ export default function QuizApp() {
             </motion.div>
           )}
 
-          {step === 9 && (
+          {step === 8 && (
             <motion.div
               key="loading"
               variants={slideVariants}
@@ -613,8 +607,8 @@ export default function QuizApp() {
                 <h2 className="text-2xl font-black text-[#00E5FF] glow-text-cyan animate-pulse">
                   Conectando Redes...
                 </h2>
-                <p className="text-sm text-slate-500 max-w-sm mx-auto">
-                  O Polvo da Octadesk está processando sua árvore de decisão e consolidando seus dados offline...
+                <p className="text-sm text-slate-300 max-w-sm mx-auto">
+                  O Polvo da Octadesk está processando sua árvore de decisão e salvando seus dados localmente...
                 </p>
               </div>
 
@@ -622,20 +616,20 @@ export default function QuizApp() {
                 <OctoMascot estadoAnimação="thinking" />
               </div>
 
-              <div className="w-full max-w-xs bg-slate-200 rounded-full h-3 border border-[#E2E8F0] overflow-hidden relative shadow-[inset_0_1px_3px_rgba(0,0,0,0.2)]">
+              <div className="w-full max-w-xs bg-white/5 rounded-full h-3 border border-white/10 overflow-hidden relative shadow-[inset_0_1px_3px_rgba(0,0,0,0.5)]">
                 <motion.div
                   className="h-full bg-gradient-to-r from-[#0052CC] to-[#00E5FF] shadow-[0_0_10px_rgba(0,229,255,0.4)]"
                   style={{ width: `${progress}%` }}
                 />
               </div>
 
-              <span className="font-mono text-xs text-[#00E5FF] tracking-widest uppercase font-bold">
+              <span className="font-mono text-xs text-[#00E5FF] tracking-widest uppercase font-bold animate-pulse">
                 {Math.round(progress)}% ANALISADO
               </span>
             </motion.div>
           )}
 
-          {step === 10 && diagnostico && (
+          {step === 9 && diagnostico && (
             <motion.div
               key="results"
               variants={slideVariants}
@@ -645,10 +639,10 @@ export default function QuizApp() {
               className="text-center space-y-8 py-4 flex flex-col items-center"
             >
               <div className="space-y-2">
-                <span className="text-[10px] uppercase font-mono tracking-[0.35em] text-[#00E5FF] border border-[#00E5FF]/20 bg-[#F0FDFA] px-3 py-1 rounded-full">
+                <span className="text-[10px] uppercase font-mono tracking-[0.35em] text-[#00E5FF] border border-[#00E5FF]/20 bg-[#F0FDFA]/5 px-3 py-1 rounded-full">
                   Decisão Concluída
                 </span>
-                <h2 className="text-3xl font-black text-slate-900">
+                <h2 className="text-3xl font-black text-white">
                   Sua Estação Recomendada
                 </h2>
               </div>
@@ -658,37 +652,37 @@ export default function QuizApp() {
               </div>
 
               {/* Card de Destaque com Borda Brilhante Ciano Neon */}
-              <div className="p-8 rounded-2xl bg-white border-2 border-[#00E5FF] w-full max-w-xl shadow-[0_0_30px_rgba(0,229,255,0.15)] flex flex-col items-center">
+              <div className="p-8 rounded-2xl bg-[#00142C] border-2 border-[#00E5FF] w-full max-w-xl shadow-[0_0_30px_rgba(0,229,255,0.2)] flex flex-col items-center">
                 <span className="text-5xl mb-4">
                   {diagnostico.destino === 'TRANSBORDO_COMERCIAL_URGENTE' && '👑'}
                   {diagnostico.destino === 'TRILHA_AUTOMACAO_ECOMMERCE' && '⚡'}
                   {diagnostico.destino === 'TRILHA_GESTAO_WHATSAPP' && '💬'}
                   {diagnostico.destino === 'TRIAGEM_PADRAO' && '🛡️'}
                 </span>
-                <h3 className="text-3xl font-black text-[#0052CC] tracking-tight uppercase mb-4">
+                <h3 className="text-3xl font-black text-[#00E5FF] tracking-tight uppercase mb-4 glow-text-cyan">
                   {diagnostico.destino.replace("TRILHA_", "").replace("TRIAGEM_", "").replace(/_/g, " ")}
                 </h3>
                 
-                <p className="text-lg text-slate-700 leading-relaxed font-medium mb-4">
+                <p className="text-lg text-slate-100 leading-relaxed font-semibold mb-4">
                   Olá parceiro! Obrigado por participar do nosso diagnóstico! {diagnostico.mensagemInterface}
                 </p>
 
-                <p className="text-sm text-slate-500 leading-relaxed border-t border-slate-100 pt-4 w-full text-left">
-                  <span className="font-extrabold text-slate-700 block mb-1 uppercase tracking-wider text-xs">FOCO DO PRODUTO:</span>
+                <p className="text-sm text-slate-400 leading-relaxed border-t border-white/10 pt-4 w-full text-left">
+                  <span className="font-extrabold text-[#00E5FF] block mb-1 uppercase tracking-wider text-xs">FOCO DO PRODUTO:</span>
                   {diagnostico.focoProduto}
                 </p>
 
                 {diagnostico.brindeQualificado ? (
-                  <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-center gap-2 mt-6 w-full">
+                  <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/35 flex items-center justify-center gap-2 mt-6 w-full shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                     <span className="text-lg animate-bounce">🎁</span>
-                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
                       BRINDE ADICIONAL QUALIFICADO! RETIRE NO BALCÃO!
                     </span>
                   </div>
                 ) : (
-                  <div className="p-3 bg-slate-50 rounded-xl border border-[#E2E8F0] flex items-center justify-center gap-2 mt-6 w-full">
+                  <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center gap-2 mt-6 w-full">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#00E5FF] animate-pulse"></span>
-                    <span className="text-[10px] uppercase font-mono tracking-widest text-slate-500">
+                    <span className="text-[10px] uppercase font-mono tracking-widest text-[#8CA3C7]">
                       DADOS SALVOS OFFLINE COM SEGURANÇA! OBRIGADO POR PARTICIPAR!
                     </span>
                   </div>
@@ -698,7 +692,7 @@ export default function QuizApp() {
               <div className="w-full max-w-lg">
                 <button
                   onClick={handleReset}
-                  className="w-full md:w-3/4 py-6 text-2xl font-black rounded-2xl tracking-wide uppercase bg-[#00E5FF] text-slate-955 shadow-[0_0_20px_rgba(0,229,255,0.3)] hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 mx-auto block mt-8 cursor-pointer"
+                  className="w-full md:w-3/4 py-6 text-2xl font-black rounded-2xl tracking-wide uppercase bg-[#00E5FF] text-slate-950 shadow-[0_0_20px_rgba(0,229,255,0.35)] hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 mx-auto block mt-8 cursor-pointer"
                 >
                   Novo Atendimento
                 </button>
@@ -712,7 +706,9 @@ export default function QuizApp() {
       <footer className="mt-8 text-center z-10">
         <button
           onClick={() => setIsAdminOpen(true)}
-          className="px-4 py-2 text-xs font-mono text-slate-400 hover:text-slate-600 border border-transparent rounded-lg transition-all cursor-pointer uppercase tracking-wider"
+          className={`px-4 py-2 text-xs font-mono border border-transparent rounded-lg transition-colors cursor-pointer uppercase tracking-wider ${
+            step >= 3 ? 'text-[#8CA3C7] hover:text-white' : 'text-slate-400 hover:text-slate-650'
+          }`}
         >
           [ Painel de Controle ]
         </button>
