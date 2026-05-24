@@ -1,46 +1,80 @@
 @import "tailwindcss";
 
 :root {
-  --background-from: #F8FAFC;
-  --background-to: #E2E8F0;
-  --foreground: #0F172A;
-  --octa-blue: #0052CC;
-  --octa-dark: #FFFFFF;
-  --cyber-blue: #0052CC;
-  --cyber-cyan: #00E5FF;
-  --panel-bg: rgba(255, 255, 255, 0.95);
-  --panel-border: rgba(0, 82, 204, 0.08);
-  --accent-glow: rgba(0, 229, 255, 0.25);
-  --card-hover-border: rgba(0, 82, 204, 0.2);
-  --bg-grid-color: rgba(0, 82, 204, 0.015);
+  --bg-deep-dive: #001B3D;       /* Fundo escuro e imersivo */
+  --bg-card-surface: #002B5C;   /* Superfície dos blocos do Quiz */
+  --color-brand-blue: #0077FF;  /* Azul Octadesk Oficial */
+  --color-success-green: #00DA70;/* Tom de Sucesso/Qualificado */
+  --text-primary: #FFFFFF;
+  --text-secondary: #8CA3C7;
+  --radius-premium: 16px;       /* Bordas arredondadas institucionais */
 }
 
 @theme inline {
-  --color-bg-from: var(--background-from);
-  --color-bg-to: var(--background-to);
-  --color-foreground: var(--foreground);
-  --color-octa-blue: var(--octa-blue);
-  --color-octa-dark: var(--octa-dark);
-  --color-cyber-blue: var(--cyber-blue);
-  --color-cyber-cyan: var(--cyber-cyan);
-  --color-panel-bg: var(--panel-bg);
-  --color-panel-border: var(--panel-border);
+  --color-bg-deep-dive: var(--bg-deep-dive);
+  --color-bg-card-surface: var(--bg-card-surface);
+  --color-brand-blue: var(--color-brand-blue);
+  --color-success-green: var(--color-success-green);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
 }
 
 body {
-  background: radial-gradient(circle at center, var(--background-from) 0%, var(--background-to) 100%);
-  background-attachment: fixed;
-  color: var(--foreground);
+  background: var(--bg-deep-dive);
+  color: var(--text-primary);
   font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Customização dos Inputs para Tablet/Totem (Fáceis de tocar) */
+input, select {
+  width: 100%;
+  padding: 18px;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border: 2px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: var(--radius-premium) !important;
+  color: var(--text-primary) !important;
+  font-size: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input:focus, select:focus {
+  border-color: var(--color-brand-blue) !important;
+  box-shadow: 0 0 15px rgba(0, 119, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  outline: none;
+}
+
+/* Grid para as Soluções/Boxes do Quiz (Estilo Cards das novas referências) */
+.quiz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.quiz-card {
+  background: var(--bg-card-surface);
+  border: 2px solid transparent;
+  border-radius: var(--radius-premium);
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.quiz-card.selected {
+  border-color: var(--color-brand-blue);
+  background: linear-gradient(145deg, #002b5c, #003a7d);
+  transform: translateY(-2px);
 }
 
 .glow-cyan {
-  box-shadow: 0 0 15px rgba(0, 229, 255, 0.25);
+  box-shadow: 0 0 15px rgba(0, 119, 255, 0.25);
 }
 
 .glow-text-cyan {
-  text-shadow: 0 0 8px rgba(0, 229, 255, 0.25);
+  text-shadow: 0 0 8px rgba(0, 119, 255, 0.25);
 }
 
 ::-webkit-scrollbar {
@@ -48,10 +82,10 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--background-to);
+  background: var(--bg-deep-dive);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--cyber-cyan);
+  background: var(--color-brand-blue);
   border-radius: 3px;
 }
 
