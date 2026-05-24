@@ -229,9 +229,6 @@ export default function QuizApp() {
               className="text-center py-6 space-y-8 flex flex-col items-center"
             >
               <div className="space-y-4">
-                <span className="text-xs font-bold text-[#00E5FF] uppercase tracking-[0.3em] bg-[#F0FDFA] px-3 py-1.5 rounded-full border border-[#00E5FF]/20">
-                  Qualificação & Diagnóstico
-                </span>
                 <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-snug text-slate-955 max-w-xl mx-auto">
                   Olá parceiro! Seja bem vindo ao estande Octadesk no Fórum Ecommerce Brasil, participe da nossa jornada às profundezas do oceano Octadesk.
                 </h1>
@@ -438,10 +435,10 @@ export default function QuizApp() {
 
               <div className="quiz-grid">
                 {[
-                  { value: 'whatsapp_instagram', label: 'WhatsApp e Instagram' },
-                  { value: 'ecommerce', label: 'E-commerce / Loja Virtual' },
-                  { value: 'loja_fisica', label: 'Loja Física / Omnichannel' },
-                  { value: 'b2b', label: 'Vendas Corporativas B2B' },
+                  { value: 'whatsapp_instagram', label: 'WhatsApp & Instagram' },
+                  { value: 'ecommerce', label: 'E-commerce' },
+                  { value: 'loja_fisica', label: 'Omnichannel' },
+                  { value: 'b2b', label: 'Corporativo' },
                 ].map((opt) => (
                   <QuizCard
                     key={opt.value}
@@ -481,10 +478,10 @@ export default function QuizApp() {
 
               <div className="quiz-grid">
                 {[
-                  { value: 'automacao_vendas', label: 'Automação de fluxos e recuperação de vendas' },
-                  { value: 'centralizar', label: 'Centralização de atendentes e WhatsApp em número único' },
-                  { value: 'metricas', label: 'Relatórios gerenciais, SLAs e dashboards' },
-                  { value: 'escala', label: 'Atendimento corporativo avançado em escala' },
+                  { value: 'automacao_vendas', label: 'Automação de fluxos' },
+                  { value: 'centralizar', label: 'Centralização de números' },
+                  { value: 'metricas', label: 'Relatórios e dashboards' },
+                  { value: 'escala', label: 'Atendimento em escala' },
                 ].map((opt) => (
                   <QuizCard
                     key={opt.value}
