@@ -412,7 +412,7 @@ export default function QuizApp() {
                 <p className="text-sm text-slate-500">Quantas pessoas atuam diretamente no seu atendimento?</p>
               </div>
 
-              <div className="grid-solucoes">
+              <div className="grid-canais">
                 {[
                   { value: 'eu_mais_um', label: 'Eu + 1 colaborador' },
                   { value: '3_5', label: '3 a 5 colaboradores' },
@@ -455,7 +455,7 @@ export default function QuizApp() {
                 <p className="text-sm text-slate-500">Por onde seus clientes entram em contato com mais frequência? (Selecione todos que se aplicam)</p>
               </div>
 
-              <div className="grid-solucoes">
+              <div className="grid-canais">
                 {[
                   { value: 'whatsapp_instagram', label: 'WhatsApp & Instagram' },
                   { value: 'ecommerce', label: 'E-commerce' },
@@ -512,7 +512,7 @@ export default function QuizApp() {
                 <p className="text-sm text-slate-500">Selecione uma de nossas soluções para ver o diagnóstico e a demonstração:</p>
               </div>
 
-              <div className="grid-solucoes flex flex-col gap-4">
+              <div className="grid-canais flex flex-col gap-4">
                 {[
                   { 
                     value: 'automacao_vendas', 

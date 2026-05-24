@@ -47,9 +47,9 @@ export default function QuizCard({
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className={`w-full text-left p-5 rounded-xl border-2 transition-all duration-300 flex items-center justify-between cursor-pointer ${
+      className={`card-solucao w-full text-left p-5 rounded-xl border-2 transition-all duration-300 flex items-center justify-between cursor-pointer ${
         isSelected
-          ? `${style.borderSelected}`
+          ? `selected ${style.borderSelected}`
           : "border-[#E2E8F0] bg-white text-[#0F172A] " + style.hover
       }`}
     >

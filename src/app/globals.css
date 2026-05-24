@@ -70,23 +70,23 @@ body {
   animation: pulse-slow 4s infinite ease-in-out;
 }
 
-/* Parâmetros de Estilo unificados */
+/* Configuração de Variáveis de Cor Globais */
 :root {
-  --bg-main: #F8FAFC;
-  --bg-abismo: #001B3D;
-  --cyan-neon: #00E5FF;
-  --navy-official: #002B5C;
+  --bg-primary: #F8FAFC;         /* Fundo claro, limpo e corporativo */
+  --bg-deep: #001B3D;            /* Azul Profundo para telas internas */
+  --cyan-neon: #00E5FF;          /* O ciano de alto contraste */
+  --navy-official: #002B5C;      /* Cor do Headset e marca */
 }
 
-/* Cards de Soluções com Múltipla Escolha */
-.grid-solucoes {
+/* Grid de Soluções com Múltipla Escolha */
+.grid-canais {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
   padding: 10px;
 }
 
-.card-interativo {
+.card-solucao {
   border: 2px solid #E2E8F0;
   border-radius: 16px;
   padding: 24px;
@@ -99,12 +99,12 @@ body {
   min-height: 120px;
 }
 
-.card-interativo:hover {
+.card-solucao:hover {
   border-color: #CBD5E1;
   transform: translateY(-2px);
 }
 
-.card-interativo.selected {
+.card-solucao.selected {
   border-color: var(--cyan-neon);
   box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
   background: #F0FDFA;
