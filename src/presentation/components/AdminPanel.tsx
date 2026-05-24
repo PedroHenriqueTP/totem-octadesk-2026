@@ -87,7 +87,6 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(pendingLeads),
       }).catch(() => {
-        // Fallback de sucesso simulado caso rede offline do evento impeça a requisição direta
         return { ok: true };
       });
 
@@ -162,33 +161,33 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   };
 
   const getHeatColor = (count: number, max: number) => {
-    if (count === 0) return "bg-white/5 border-white/10 text-white/40";
+    if (count === 0) return "bg-slate-50 border-slate-200 text-slate-404";
     const ratio = count / (max || 1);
-    if (ratio < 0.35) return "bg-[#0077FF]/10 border-[#0077FF]/20 text-[#0077FF]/80";
-    if (ratio < 0.7) return "bg-[#0077FF]/25 border-[#0077FF]/40 text-[#0077FF] font-bold";
-    return "bg-[#0077FF]/40 border-[#0077FF] text-white font-extrabold shadow-[0_0_15px_rgba(0,119,255,0.25)]";
+    if (ratio < 0.35) return "bg-cyan-50/50 border-[#E2E8F0] text-cyan-700";
+    if (ratio < 0.7) return "bg-cyan-100/60 border-cyan-200 text-cyan-800 shadow-[0_0_12px_rgba(6,182,212,0.08)] font-bold";
+    return "bg-cyan-200 border-cyan-300 text-cyan-950 shadow-[0_0_20px_rgba(6,182,212,0.15)] font-extrabold";
   };
 
   const maxHeat = Math.max(heatMap.manha, heatMap.tarde, heatMap.noite, 1);
 
   if (!autenticado) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#001B3D] p-6">
-        <div className="w-full max-w-md bg-[#002B5C] border border-white/10 p-8 rounded-2xl shadow-2xl text-center">
-          <h2 className="text-2xl font-black text-white mb-2">Acesso Restrito</h2>
-          <p className="text-[#8CA3C7] text-sm mb-6">Insira o PIN operacional da Octadesk para acessar o painel administrativo</p>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F8FAFC] p-6">
+        <div className="w-full max-w-md bg-white border border-[#E2E8F0] p-8 rounded-2xl shadow-2xl text-center">
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Acesso Restrito</h2>
+          <p className="text-slate-500 text-sm mb-6">Insira o PIN operacional da Octadesk para acessar o painel administrativo</p>
           <input
             type="password"
             maxLength={4}
             value={pin}
             onChange={(e) => verificarPin(e.target.value)}
-            className="w-full text-center py-4 bg-black/20 border border-white/10 rounded-xl text-3xl font-mono text-[#0077FF] focus:outline-none focus:border-[#0077FF] tracking-widest"
+            className="w-full text-center py-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-3xl font-mono text-[#0052CC] focus:outline-none focus:border-[#0052CC] tracking-widest"
             placeholder="****"
             autoFocus
           />
           <button 
             onClick={onClose} 
-            className="mt-6 text-xs text-[#8CA3C7] hover:text-white transition-colors uppercase tracking-wider block mx-auto cursor-pointer"
+            className="mt-6 text-xs text-slate-400 hover:text-slate-700 transition-colors uppercase tracking-wider block mx-auto cursor-pointer"
           >
             Voltar ao Totem
           </button>
@@ -214,12 +213,12 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const pTriagem = (countTriagem / total) * 100;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#001B3D] p-8 text-white pb-32">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#F8FAFC] p-8 text-slate-800 pb-32">
       <div className="max-w-6xl mx-auto">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-white/10 pb-6 mb-8 gap-4">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-[#E2E8F0] pb-6 mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-black tracking-tight">OCTADESK CORE HUB</h1>
-            <p className="text-[#8CA3C7] text-sm">Monitoramento de Infraestrutura de Dados LocalStorage | Fórum E-commerce Brasil 2026</p>
+            <h1 className="text-3xl font-black tracking-tight text-slate-900">OCTADESK CORE HUB</h1>
+            <p className="text-slate-500 text-sm">Monitoramento de Infraestrutura de Dados LocalStorage | Fórum E-commerce Brasil 2026</p>
           </div>
           <div className="flex gap-3">
             <button 
@@ -227,8 +226,8 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               disabled={syncState === 'syncing' || metrics.pendentesOffline === 0}
               className={`px-6 py-3 rounded-xl font-bold transition-all cursor-pointer ${
                 metrics.pendentesOffline === 0
-                  ? "bg-white/5 text-[#8CA3C7] cursor-not-allowed border border-white/5"
-                  : "bg-gradient-to-r from-[#0077FF] to-[#0052CC] hover:from-[#268eff] hover:to-[#0052CC] text-white shadow-lg"
+                  ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none"
+                  : "bg-gradient-to-r from-[#00E5FF] to-[#0052CC] hover:from-[#00D0E6] hover:to-[#0047B3] text-white shadow-[0_4px_15px_rgba(0,82,204,0.2)]"
               }`}
             >
               {syncState === 'syncing' ? 'Sincronizando...' : 
@@ -239,35 +238,35 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-[#002B5C] border border-white/10 p-6 rounded-2xl shadow-sm">
-            <p className="text-[#8CA3C7] text-xs font-semibold uppercase tracking-wider mb-1">Total de Participantes</p>
-            <h3 className="text-4xl font-black text-white">{metrics.totalLeads}</h3>
+          <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-sm">
+            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Total de Participantes</p>
+            <h3 className="text-4xl font-black text-slate-900">{metrics.totalLeads}</h3>
           </div>
-          <div className="bg-[#002B5C] border border-white/10 p-6 rounded-2xl shadow-sm">
-            <p className="text-[#8CA3C7] text-xs font-semibold uppercase tracking-wider mb-1">Sincronizados na Nuvem</p>
-            <h3 className="text-4xl font-black text-[#00DA70]">{metrics.sincronizados}</h3>
+          <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-sm">
+            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Sincronizados na Nuvem</p>
+            <h3 className="text-4xl font-black text-emerald-650">{metrics.sincronizados}</h3>
           </div>
           <div className={`border p-6 rounded-2xl transition-all shadow-sm ${
             metrics.pendentesOffline > 0 
-              ? "border-amber-500/40 bg-amber-500/5" 
-              : "border-white/10 bg-[#002B5C]"
+              ? "border-amber-300 bg-amber-50/50" 
+              : "border-[#E2E8F0] bg-white"
           }`}>
-            <p className="text-[#8CA3C7] text-xs font-semibold uppercase tracking-wider mb-1">Retidos Offline</p>
-            <h3 className={`text-4xl font-black ${metrics.pendentesOffline > 0 ? "text-amber-400" : "text-white"}`}>
+            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Retidos Offline</p>
+            <h3 className={`text-4xl font-black ${metrics.pendentesOffline > 0 ? "text-amber-600" : "text-slate-900"}`}>
               {metrics.pendentesOffline}{' '}
-              {metrics.pendentesOffline > 0 && <span className="text-sm font-normal text-[#8CA3C7]">aguardando rede</span>}
+              {metrics.pendentesOffline > 0 && <span className="text-sm font-normal text-slate-500">aguardando rede</span>}
             </h3>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <div className="bg-[#002B5C] border border-white/10 p-6 rounded-2xl shadow-sm space-y-6">
-            <h3 className="font-extrabold text-base">Distribuição por Estação</h3>
+          <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-sm space-y-6">
+            <h3 className="font-extrabold text-base text-slate-900">Distribuição por Estação</h3>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-8 py-2">
               <div className="relative w-40 h-40 flex-shrink-0">
                 <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4.2" />
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#F1F5F9" strokeWidth="4.2" />
                   
                   {metrics.totalLeads > 0 && (
                     <>
@@ -277,7 +276,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                           cy="18"
                           r="15.915"
                           fill="none"
-                          stroke="#FFD700"
+                          stroke="#EAB308"
                           strokeWidth="4.2"
                           strokeDasharray={`${pTransbordo} 100`}
                           strokeDashoffset="0"
@@ -291,7 +290,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                           cy="18"
                           r="15.915"
                           fill="none"
-                          stroke="#00DA70"
+                          stroke="#10B981"
                           strokeWidth="4.2"
                           strokeDasharray={`${pAutomacao} 100`}
                           strokeDashoffset={-pTransbordo}
@@ -305,7 +304,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                           cy="18"
                           r="15.915"
                           fill="none"
-                          stroke="#0077FF"
+                          stroke="#3B82F6"
                           strokeWidth="4.2"
                           strokeDasharray={`${pGestao} 100`}
                           strokeDashoffset={-(pTransbordo + pAutomacao)}
@@ -319,7 +318,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                           cy="18"
                           r="15.915"
                           fill="none"
-                          stroke="#8CA3C7"
+                          stroke="#64748B"
                           strokeWidth="4.2"
                           strokeDasharray={`${pTriagem} 100`}
                           strokeDashoffset={-(pTransbordo + pAutomacao + pGestao)}
@@ -330,39 +329,39 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   )}
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-black text-white">{metrics.totalLeads}</span>
-                  <span className="text-[9px] uppercase tracking-widest text-[#8CA3C7] font-bold">Total</span>
+                  <span className="text-3xl font-black text-slate-900">{metrics.totalLeads}</span>
+                  <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold">Total</span>
                 </div>
               </div>
 
               <div className="flex-1 w-full space-y-3">
-                <div className="flex items-center justify-between text-xs font-bold text-white/80 border-b border-white/5 pb-1">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-50 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#FFD700]"></span>
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#EAB308]"></span>
                     <span className="uppercase tracking-wider">COMERCIAL URGENTE</span>
                   </div>
                   <span>{countTransbordo} ({pctTransbordo}%)</span>
                 </div>
                 
-                <div className="flex items-center justify-between text-xs font-bold text-white/80 border-b border-white/5 pb-1">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-50 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#00DA70]"></span>
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#10B981]"></span>
                     <span className="uppercase tracking-wider">AUTOMAÇÃO E-COMMERCE</span>
                   </div>
                   <span>{countAutomacao} ({pctAutomacao}%)</span>
                 </div>
                 
-                <div className="flex items-center justify-between text-xs font-bold text-white/80 border-b border-white/5 pb-1">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-55 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#0077FF]"></span>
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#3B82F6]"></span>
                     <span className="uppercase tracking-wider">GESTÃO WHATSAPP</span>
                   </div>
                   <span>{countGestao} ({pctGestao}%)</span>
                 </div>
                 
-                <div className="flex items-center justify-between text-xs font-bold text-white/80 border-b border-white/5 pb-1">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-55 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-[#8CA3C7]"></span>
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#64748B]"></span>
                     <span className="uppercase tracking-wider">TRIAGEM PADRÃO</span>
                   </div>
                   <span>{countTriagem} ({pctTriagem}%)</span>
@@ -371,8 +370,8 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             </div>
           </div>
 
-          <div className="bg-[#002B5C] border border-white/10 p-6 rounded-2xl shadow-sm space-y-6">
-            <h3 className="font-extrabold text-base">Volumetria Temporal (Mapa de Calor do Evento)</h3>
+          <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-sm space-y-6">
+            <h3 className="font-extrabold text-base text-slate-900">Volumetria Temporal (Mapa de Calor do Evento)</h3>
             <div className="grid grid-cols-3 gap-4 h-[178px]">
               <div className={`border p-4 rounded-xl flex flex-col justify-between transition-all duration-300 ${getHeatColor(heatMap.manha, maxHeat)}`}>
                 <div>
@@ -401,14 +400,14 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </div>
         </div>
 
-        <div className="bg-[#002B5C] border border-white/10 rounded-2xl overflow-hidden shadow-sm mb-12">
-          <div className="px-6 py-4 border-b border-white/10 bg-black/20 flex justify-between items-center">
-            <h3 className="font-bold text-sm">Registros Recentes em Cache</h3>
+        <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-sm mb-12">
+          <div className="px-6 py-4 border-b border-[#E2E8F0] bg-slate-50/50 flex justify-between items-center">
+            <h3 className="font-bold text-sm text-slate-800">Registros Recentes em Cache</h3>
             <button 
               onClick={handleExportCSV}
               disabled={metrics.totalLeads === 0}
-              className={`text-xs font-bold uppercase tracking-wider border px-3 py-1.5 rounded transition-all bg-white/5 border-white/10 hover:bg-white/10 cursor-pointer ${
-                metrics.totalLeads === 0 ? "opacity-50 cursor-not-allowed" : ""
+              className={`text-xs font-bold uppercase tracking-wider border px-3 py-1.5 rounded transition-all bg-white border-[#0052CC]/30 text-[#0052CC] hover:bg-blue-50 cursor-pointer ${
+                metrics.totalLeads === 0 ? "opacity-50 cursor-not-allowed border-slate-200 text-slate-400 bg-slate-50" : ""
               }`}
             >
               Baixar Cópia CSV Local
@@ -418,7 +417,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-white/10 bg-black/10 text-[#8CA3C7] text-xs font-bold uppercase">
+                <tr className="border-b border-[#E2E8F0] bg-slate-50 text-slate-500 text-xs font-bold uppercase">
                   <th className="p-4">Nome</th>
                   <th className="p-4">Empresa</th>
                   <th className="p-4">WhatsApp</th>
@@ -428,16 +427,16 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               </thead>
               <tbody className="text-sm">
                 {recentLeads.map((lead) => (
-                  <tr key={lead.id} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="p-4 font-semibold text-white">{lead.dados.nome}</td>
-                    <td className="p-4 text-[#8CA3C7]">{lead.dados.empresa || '-'}</td>
-                    <td className="p-4 text-[#8CA3C7]">{lead.dados.telefone || '-'}</td>
+                  <tr key={lead.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                    <td className="p-4 font-semibold text-slate-900">{lead.dados.nome}</td>
+                    <td className="p-4 text-slate-500">{lead.dados.empresa || '-'}</td>
+                    <td className="p-4 text-slate-500">{lead.dados.telefone || '-'}</td>
                     <td className="p-4">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        lead.diagnostico?.destino === 'TRANSBORDO_COMERCIAL_URGENTE' ? 'bg-yellow-500/10 text-yellow-400' :
-                        lead.diagnostico?.destino === 'TRILHA_AUTOMACAO_ECOMMERCE' ? 'bg-[#00DA70]/10 text-[#00DA70]' :
-                        lead.diagnostico?.destino === 'TRILHA_GESTAO_WHATSAPP' ? 'bg-[#0077FF]/10 text-[#0077FF]' :
-                        'bg-white/10 text-[#8CA3C7]'
+                        lead.diagnostico?.destino === 'TRANSBORDO_COMERCIAL_URGENTE' ? 'bg-yellow-100 text-yellow-800' :
+                        lead.diagnostico?.destino === 'TRILHA_AUTOMACAO_ECOMMERCE' ? 'bg-emerald-100 text-emerald-800' :
+                        lead.diagnostico?.destino === 'TRILHA_GESTAO_WHATSAPP' ? 'bg-blue-100 text-blue-800' :
+                        'bg-slate-100 text-slate-800'
                       }`}>
                         {lead.diagnostico?.destino === 'TRANSBORDO_COMERCIAL_URGENTE' ? 'URGENTE' : 
                          lead.diagnostico?.destino === 'TRILHA_AUTOMACAO_ECOMMERCE' ? 'AUTOMAÇÃO' : 
@@ -448,14 +447,14 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                       {lead.sincronizado ? (
                         <span className="text-[#00DA70] font-bold text-xs">● Sincronizado</span>
                       ) : (
-                        <span className="text-amber-450 font-bold text-xs">○ Pendente</span>
+                        <span className="text-amber-500 font-bold text-xs">○ Pendente</span>
                       )}
                     </td>
                   </tr>
                 ))}
                 {recentLeads.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-[#8CA3C7] font-mono">
+                    <td colSpan={5} className="p-8 text-center text-slate-500 font-mono">
                       [Nenhum participante em cache no LocalStorage]
                     </td>
                   </tr>
@@ -466,11 +465,11 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-[#001B3D] border-t border-white/10 p-4 z-40 shadow-[0_-5px_20px_rgba(0,0,0,0.3)]">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E2E8F0] p-4 z-40 shadow-[0_-5px_20px_rgba(0,0,0,0.05)]">
         <div className="max-w-6xl mx-auto">
           <button 
             onClick={onClose}
-            className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-gradient-to-r from-[#0077FF] to-[#0052CC] hover:from-[#268eff] hover:to-[#0052CC] text-white shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer block text-center"
+            className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-gradient-to-r from-[#00E5FF] to-[#0052CC] hover:from-[#00D0E6] hover:to-[#0047B3] text-white shadow-[0_8px_25px_rgba(0,82,204,0.25)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer block text-center"
           >
             Voltar ao Fluxo Principal (Totem)
           </button>

@@ -14,11 +14,11 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
           justify-content: center;
           align-items: center;
           width: 100%;
-          max-width: 320px;
+          max-width: 240px;
           margin: 0 auto;
         }
         
-        /* O Polvo Base - Linhas limpas inspiradas na marca */
+        /* O Polvo Base - Linhas limpas e ciano neon */
         .octo-svg {
           width: 100%;
           height: auto;
@@ -34,13 +34,13 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
         /* Estado Processando Diagnóstico (Quiz) */
         .anima-thinking {
           animation: deepDiveThink 1.5s ease-in-out infinite;
-          filter: drop-shadow(0px 0px 15px rgba(0, 119, 255, 0.6));
+          filter: drop-shadow(0px 0px 15px rgba(0, 229, 255, 0.6));
         }
 
         /* Estado Sucesso (Direcionamento de Fluxo) */
         .anima-success {
           animation: deepDiveSuccess 0.6s ease-in-out forwards;
-          filter: drop-shadow(0px 0px 20px rgba(0, 218, 112, 0.7));
+          filter: drop-shadow(0px 0px 20px rgba(0, 229, 255, 0.8));
         }
 
         @keyframes deepDiveFloat {
@@ -64,7 +64,7 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
         }
         
         .octo-container:hover .octo-svg {
-          filter: drop-shadow(0px 0px 12px rgba(0, 218, 112, 0.4));
+          filter: drop-shadow(0px 0px 12px rgba(0, 229, 255, 0.4));
         }
       `}</style>
 
@@ -75,33 +75,47 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
         fill="none" 
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Headset Premium Polido */}
-        <g id="octo-headset">
-          <path d="M40 90C40 50 70 30 100 30C130 30 160 50 160 90" stroke="#001B3D" strokeWidth="8" strokeLinecap="round"/>
-          <rect x="30" y="80" width="16" height="30" rx="6" fill="#001B3D"/>
-          <rect x="154" y="80" width="16" height="30" rx="6" fill="#001B3D"/>
-          <path d="M46 105C46 120 60 130 75 125" stroke="#001B3D" strokeWidth="4" strokeLinecap="round"/>
-          <circle cx="75" cy="125" r="4" fill="#002d62" className="octo-interactive-element"/>
-        </g>
+        <defs>
+          {/* Gradiente do corpo fidedigno ao original */}
+          <linearGradient id="bodyGradient" x1="100" y1="40" x2="100" y2="150" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#0052CC" />
+            <stop offset="100%" stopColor="#1E293B" />
+          </linearGradient>
+          {/* Gradiente do headset */}
+          <linearGradient id="headsetGrad" x1="40" y1="90" x2="160" y2="90" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#64748B" />
+            <stop offset="50%" stopColor="#94A3B8" />
+            <stop offset="100%" stopColor="#475569" />
+          </linearGradient>
+        </defs>
 
-        {/* Corpo e Cabeça (Formas suaves - DNA Octadesk) */}
-        <g id="octo-head">
-          <circle cx="100" cy="95" r="55" fill="#003566"/>
-          {/* Olhos limpos e acertivos (Idênticos à marca) */}
-          <circle cx="80" cy="85" r="14" fill="white"/>
-          <circle cx="80" cy="85" r="6" fill="#001B3D"/>
-          <circle cx="120" cy="85" r="14" fill="white"/>
-          <circle cx="120" cy="85" r="6" fill="#001B3D"/>
-          {/* Sorriso Simples em Arco */}
-          <path d="M85 115Q100 125 115 115" stroke="#001B3D" strokeWidth="4" strokeLinecap="round"/>
-        </g>
-
-        {/* Tentáculos simplificados para animação leve via Skew/Translate */}
-        <g id="octo-tentacles" fill="#003566">
+        {/* Tentáculos com preenchimento do gradiente do corpo e contorno ciano neon */}
+        <g id="octo-tentacles" fill="url(#bodyGradient)" stroke="#00E5FF" strokeWidth="2.5" strokeLinejoin="round">
           <path d="M60 140Q40 170 30 190Q45 190 65 155Z"/>
           <path d="M85 148Q80 180 80 195Q95 195 95 150Z"/>
           <path d="M115 150Q120 180 120 195Q105 195 105 148Z"/>
           <path d="M140 140Q160 170 170 190Q155 190 135 155Z"/>
+        </g>
+
+        {/* Headset Premium Polido */}
+        <g id="octo-headset">
+          <path d="M40 90C40 50 70 30 100 30C130 30 160 50 160 90" stroke="url(#headsetGrad)" strokeWidth="7" strokeLinecap="round"/>
+          <rect x="28" y="78" width="16" height="28" rx="5" fill="#475569" stroke="#94A3B8" strokeWidth="2"/>
+          <rect x="156" y="78" width="16" height="28" rx="5" fill="#475569" stroke="#94A3B8" strokeWidth="2"/>
+          <path d="M44 102Q55 125 80 120" stroke="#94A3B8" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+          <circle cx="80" cy="120" r="3.5" fill="#00E5FF" className="octo-interactive-element"/>
+        </g>
+
+        {/* Corpo e Cabeça (Formas suaves - DNA Octadesk) com contorno ciano neon */}
+        <g id="octo-head">
+          <circle cx="100" cy="95" r="55" fill="url(#bodyGradient)" stroke="#00E5FF" strokeWidth="2"/>
+          {/* Olhos limpos e expressivos */}
+          <circle cx="80" cy="85" r="14" fill="white" stroke="#00E5FF" strokeWidth="1.5"/>
+          <circle cx="80" cy="85" r="6" fill="#0052CC"/>
+          <circle cx="120" cy="85" r="14" fill="white" stroke="#00E5FF" strokeWidth="1.5"/>
+          <circle cx="120" cy="85" r="6" fill="#0052CC"/>
+          {/* Sorriso Simples */}
+          <path d="M85 115Q100 125 115 115" stroke="#1E293B" strokeWidth="4" strokeLinecap="round"/>
         </g>
       </svg>
     </div>
