@@ -508,32 +508,28 @@ export default function QuizApp() {
             >
               <div className="space-y-1 text-center md:text-left">
                 <span className="text-xs font-mono uppercase tracking-[0.2em] text-[#0052CC] font-bold">Passo 3 de 3</span>
-                <h2 className="text-2xl font-black text-slate-900">Conheça as Ferramentas</h2>
-                <p className="text-sm text-slate-500">Selecione uma de nossas soluções para ver o diagnóstico e a demonstração:</p>
+                <h2 className="text-2xl font-black text-slate-900">Quanto dinheiro seu atendimento está deixando na mesa?</h2>
+                <p className="text-sm text-slate-500">Selecione o cenário que melhor representa a sua operação hoje:</p>
               </div>
 
               <div className="grid-canais flex flex-col gap-4">
                 {[
                   { 
                     value: 'automacao_vendas', 
-                    label: 'Recuperação de Carrinho',
-                    description: 'Automatize cobranças via WhatsApp, recupere PIX, boletos e carrinhos abandonados de forma 100% automatizada.'
+                    label: 'Você já tem automação de fluxos e recuperação de PIX/Carrinho abandonado?'
                   },
                   { 
                     value: 'centralizar', 
-                    label: 'Centralização de Números',
-                    description: 'Conecte múltiplos atendentes em um único número de WhatsApp de forma organizada, dividindo por departamentos.'
+                    label: 'Seu time sofre para centralizar múltiplos atendentes em um único número de WhatsApp?'
                   },
                   { 
                     value: 'metricas', 
-                    label: 'Dashboard Gerencial',
-                    description: 'Acompanhe métricas de atendimento em tempo real, controle SLAs de resposta e veja a produtividade de cada colaborador.'
+                    label: 'Sua gestão sente falta de relatórios em tempo real, dashboards e controle de SLAs?'
                   },
                 ].map((opt) => (
                   <QuizCard
                     key={opt.value}
                     label={opt.label}
-                    description={opt.description}
                     isSelected={
                       opt.value === 'automacao_vendas' ? formData.dorFinanceira === 'abandono_carrinho' :
                       opt.value === 'centralizar' ? formData.maiorGargalo === 'centralizar_numero' :
