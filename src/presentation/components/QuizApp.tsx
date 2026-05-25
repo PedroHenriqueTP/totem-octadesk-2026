@@ -12,8 +12,8 @@ import { LocalStorageManager, LeadRegistrado } from '../../infra/local-storage-m
 import AdminPanel from './AdminPanel';
 
 export default function QuizApp() {
-  // 1: Cadastro, 2: Diagnóstico, 3: Quiz, 4: Loading, 5: Veredito
-  const [step, setStep] = useState<number>(1); 
+  // 0: Recepção, 1: Cadastro, 2: Diagnóstico, 3: Quiz, 4: Loading, 5: Veredito
+  const [step, setStep] = useState<number>(0); 
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -328,6 +328,38 @@ export default function QuizApp() {
         )}
 
         <AnimatePresence mode="wait">
+          {step === 0 && (
+            <motion.div
+              key="recepcao"
+              variants={slideVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="text-center space-y-8 py-6 flex flex-col items-center"
+            >
+              <div className="space-y-3">
+                <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#0EA5E9] font-black block">
+                  Diagnóstico Exclusivo
+                </span>
+                <h1 className="text-3xl font-black text-zinc-900 leading-tight max-w-md">
+                  Seu Atendimento está no topo ou perdendo dinheiro?
+                </h1>
+                <p className="text-zinc-500 text-sm max-w-sm mx-auto leading-relaxed">
+                  Descubra o nível de eficiência e automação dos seus canais de vendas em menos de 2 minutos e retire seu brinde exclusivo no estande!
+                </p>
+              </div>
+
+              <div className="w-full max-w-sm pt-4">
+                <button
+                  onClick={() => setStep(1)}
+                  className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-[#0EA5E9] border border-[#0EA5E9] text-white hover:bg-[#0284C7] shadow-[0_4px_20px_rgba(14,165,233,0.25)] hover:scale-[1.02] active:scale-[0.99] transition-all duration-300 cursor-pointer block text-center"
+                >
+                  Iniciar Diagnóstico
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           {step === 1 && (
             <motion.div
               key="cadastro"
@@ -773,6 +805,49 @@ export default function QuizApp() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Régua de Navegação Livre para Validação e Testes */}
+        <div className="mt-8 pt-4 border-t border-zinc-200/80 w-full flex flex-wrap justify-center gap-1.5 z-20">
+           <span className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 block w-full text-center mb-1">
+             Depuração: Navegação Livre entre Telas
+           </span>
+           {[
+             { label: "0: Recepção", val: 0 },
+             { label: "1: Cadastro", val: 1 },
+             { label: "2: Diagnóstico", val: 2 },
+             { label: "3: Quiz", val: 3 },
+             { label: "4: Processando", val: 4 },
+             { label: "5: Brindes", val: 5 }
+           ].map((item) => (
+             <button
+               key={item.val}
+               type="button"
+               onClick={() => {
+                 if (item.val >= 4 && !computedResult) {
+                   setComputedResult({
+                     trilha: 'Automacao',
+                     score: 5,
+                     diagnostico: {
+                       destino: 'TRILHA_AUTOMACAO_ECOMMERCE',
+                       focoProduto: 'Integrações nativas com carrinhos, disparos automáticos e recuperação via WhatsApp.',
+                       mensagemInterface: 'Diagnóstico concluído via painel de depuração! Você conquistou o Kit Premium da Octadesk.',
+                       brindeQualificado: true
+                     }
+                   });
+                   setPolvoState('trilha_automacao');
+                 }
+                 setStep(item.val);
+               }}
+               className={`py-1.5 px-3 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                 step === item.val
+                   ? "bg-[#0EA5E9] text-white shadow-sm"
+                   : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 border border-zinc-200"
+               }`}
+             >
+               {item.label}
+             </button>
+           ))}
+         </div>
 
       </div>
 
