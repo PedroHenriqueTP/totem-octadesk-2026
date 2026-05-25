@@ -476,72 +476,91 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             </button>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-150 bg-slate-50/80 text-slate-500 text-xs font-bold uppercase">
-                  <th className="p-4">Nome</th>
-                  <th className="p-4 text-center">Qualificação</th>
-                  <th className="p-4">Empresa</th>
-                  <th className="p-4">WhatsApp</th>
-                  <th className="p-4">Tempo</th>
-                  <th className="p-4">Prioridade (DeepDive)</th>
-                  <th className="p-4 text-center">Status Nuvem</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                {recentLeads.map((lead) => (
-                  <tr key={lead.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                    <td className="p-4 font-bold text-slate-900">{lead.nome}</td>
-                    <td className="p-4 text-center">
-                      {lead.isPotentialLead ? (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-rose-50 border border-rose-100 text-rose-700 text-xs font-extrabold animate-pulse shadow-sm">
-                          🔥 Potencial MQL
-                        </span>
-                      ) : (
-                        <span className="inline-block px-2.5 py-1 rounded-full bg-slate-100 text-slate-400 text-xs font-medium">
-                          Comum
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-4 text-slate-550">{lead.empresa || '-'}</td>
-                    <td className="p-4 text-slate-550 font-mono">{lead.contato || '-'}</td>
-                    <td className="p-4 text-slate-550 font-mono">{lead.tempo_jornada_segundos ? `${lead.tempo_jornada_segundos}s` : '-'}</td>
-                    <td className="p-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        lead.prioridade_ferramenta === 'cart' ? 'bg-rose-100 text-rose-800' :
-                        lead.prioridade_ferramenta === 'sales' ? 'bg-emerald-100 text-emerald-800' :
-                        lead.prioridade_ferramenta === 'info' ? 'bg-purple-100 text-purple-800' :
-                        'bg-blue-100 text-blue-800'
-                      }`}>
-                        {lead.prioridade_ferramenta ? (
-                          lead.prioridade_ferramenta === 'cart' ? 'Recuperação Carrinho' :
-                          lead.prioridade_ferramenta === 'sales' ? 'Agente de Vendas' :
-                          lead.prioridade_ferramenta === 'info' ? 'Notificação Proativa' :
-                          'FAQ Automatizado'
-                        ) : (
-                          lead.perfil_bifurcado || '-'
-                        )}
-                      </span>
-                    </td>
-                    <td className="p-4 text-center">
-                      {lead.sincronizado === 1 ? (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-100 shadow-sm">✓ Sincronizado</span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded bg-amber-50 text-amber-700 font-bold text-xs border border-amber-100 shadow-sm">○ Pendente</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {recentLeads.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="p-8 text-center text-slate-550 font-mono">
-                      [Nenhum participante em cache no IndexedDB]
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="p-6 space-y-4">
+            {recentLeads.map((lead) => (
+              <div 
+                key={lead.id} 
+                className={`p-6 rounded-3xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-6 ${
+                  lead.isPotentialLead 
+                    ? "border-rose-200 bg-rose-50/20 shadow-sm" 
+                    : "border-slate-100 bg-white hover:border-slate-200"
+                }`}
+              >
+                {/* 1. Nome e Empresa */}
+                <div className="flex-1 min-w-[200px]">
+                  <h4 className="text-lg font-extrabold text-[#2C3647]">{lead.nome}</h4>
+                  <p className="text-slate-500 text-sm font-semibold mt-0.5">{lead.empresa || 'Empresa não informada'}</p>
+                </div>
+
+                {/* 2. Contato e Tempo */}
+                <div className="flex-1 min-w-[185px] space-y-1">
+                  <div className="flex items-center gap-1.5 text-slate-700 text-sm font-medium">
+                    <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <span className="font-mono font-semibold">{lead.contato || '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-slate-500 text-xs font-semibold">
+                    <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Tempo: <strong className="font-mono text-slate-800">{lead.tempo_jornada_segundos ? `${lead.tempo_jornada_segundos}s` : '-'}</strong></span>
+                  </div>
+                </div>
+
+                {/* 3. Prioridade (DeepDive) */}
+                <div className="flex-shrink-0 min-w-[170px]">
+                  <span className={`inline-flex px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider ${
+                    lead.prioridade_ferramenta === 'cart' ? 'bg-rose-100/80 text-rose-800' :
+                    lead.prioridade_ferramenta === 'sales' ? 'bg-emerald-100/80 text-emerald-800' :
+                    lead.prioridade_ferramenta === 'info' ? 'bg-purple-100/80 text-purple-800' :
+                    'bg-blue-100/80 text-blue-800'
+                  }`}>
+                    {lead.prioridade_ferramenta ? (
+                      lead.prioridade_ferramenta === 'cart' ? 'Recuperação Carrinho' :
+                      lead.prioridade_ferramenta === 'sales' ? 'Agente de Vendas' :
+                      lead.prioridade_ferramenta === 'info' ? 'Notificação Proativa' :
+                      'FAQ Automatizado'
+                    ) : (
+                      lead.perfil_bifurcado || '-'
+                    )}
+                  </span>
+                </div>
+
+                {/* 4. Qualificação (isPotentialLead) - Destaque Principal */}
+                <div className="flex-shrink-0 min-w-[160px] flex items-center">
+                  {lead.isPotentialLead ? (
+                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-black tracking-wide shadow-sm animate-pulse">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping"></span>
+                      🔥 MQL POTENCIAL
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 text-xs font-bold">
+                      Lead Regular
+                    </span>
+                  )}
+                </div>
+
+                {/* 5. Status Nuvem */}
+                <div className="flex-shrink-0 min-w-[130px] flex items-center md:justify-end">
+                  {lead.sincronizado === 1 ? (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-100 shadow-sm">
+                      <span className="text-[10px]">✓</span> Sincronizado
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded bg-amber-50 text-amber-700 font-bold text-xs border border-amber-100 shadow-sm">
+                      <span className="text-[10px]">○</span> Pendente
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+            
+            {recentLeads.length === 0 && (
+              <div className="p-12 text-center text-slate-450 font-mono border border-dashed border-slate-200 rounded-3xl">
+                [Nenhum participante em cache no IndexedDB]
+              </div>
+            )}
           </div>
         </div>
       </div>

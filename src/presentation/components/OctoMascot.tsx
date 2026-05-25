@@ -11,7 +11,7 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
       <style>{`
         .octo-container {
           display: flex;
-          justify-content: center;
+          flex-direction: column;
           align-items: center;
           width: 100%;
           max-width: 220px;
@@ -19,6 +19,17 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
           user-select: none;
         }
         
+        .octo-label {
+          margin-top: 14px;
+          font-family: 'Urbanist', 'Inter', sans-serif;
+          font-weight: 800; /* font-extrabold */
+          font-size: 1.15rem;
+          color: #2C3647;
+          letter-spacing: 0.15em;
+          text-align: center;
+          text-transform: uppercase;
+        }
+
         .octo-svg {
           width: 100%;
           height: auto;
@@ -175,6 +186,7 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
         <ellipse cx="106" cy="112" rx="5" ry="7.5" fill="#2C3647" />
         <ellipse cx="134" cy="112" rx="5" ry="7.5" fill="#2C3647" />
       </svg>
+      <div className="octo-label">OCTADESK</div>
     </div>
   );
 };
