@@ -340,7 +340,7 @@ export default function QuizApp() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 relative overflow-hidden bg-white">
       
-      <header className="w-full max-w-4xl flex justify-between items-center z-10 mb-8 px-4">
+      <header className="w-full max-w-5xl flex justify-between items-center z-10 mb-8 px-4">
         <div className="flex items-center gap-3">
           {/* Isotipo Squircle Oficial */}
           {/* Mascote DeepDive Oficial com Headset (image_0.png) */}
@@ -367,8 +367,8 @@ export default function QuizApp() {
         </span>
       </header>
 
-      {/* Contêiner Principal Otimizado para Tablet (max-w-4xl com p-10) */}
-      <div className="w-full max-w-4xl shadow-2xl p-10 rounded-3xl z-10 relative overflow-hidden transition-all duration-350 bg-white border border-zinc-200/80 text-[#2C3647] backdrop-blur-xl">
+      {/* Contêiner Principal Otimizado para Tablet (max-w-5xl com p-10) */}
+      <div className="w-full max-w-5xl shadow-2xl p-10 rounded-3xl z-10 relative overflow-hidden transition-all duration-350 bg-white border border-zinc-200/80 text-[#2C3647] backdrop-blur-xl">
         
         {/* Renderiza o mascote no topo nas etapas de 1 a 3 */}
         {step < 4 && (
@@ -402,7 +402,7 @@ export default function QuizApp() {
               <div className="w-full max-w-md pt-4">
                 <button
                   onClick={() => { setStep(1); setStartTime(Date.now()); }}
-                  className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-[#2C3647] text-white hover:bg-[#1E293B] shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer block text-center"
+                  className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-[#2C3647] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-lg transition-all duration-150 cursor-pointer block text-center"
                 >
                   Iniciar DeepDive
                 </button>
@@ -495,7 +495,7 @@ export default function QuizApp() {
                   disabled={!isStep1Valid}
                   className={`w-full py-5 rounded-2xl font-bold transition-all text-lg flex items-center justify-center gap-2 ${
                     isStep1Valid
-                      ? "bg-[#2C3647] text-white hover:bg-[#1E293B] shadow-md cursor-pointer"
+                      ? "bg-[#2C3647] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-md cursor-pointer"
                       : "bg-zinc-100 text-zinc-400 cursor-not-allowed border border-zinc-200"
                   }`}
                 >
@@ -609,7 +609,7 @@ export default function QuizApp() {
               <div className="pt-6 flex justify-between">
                 <button
                   onClick={() => setStep(1)}
-                  className="px-6 py-4 rounded-xl border border-zinc-200 text-zinc-700 font-bold hover:bg-zinc-50 transition-colors text-sm cursor-pointer"
+                  className="px-8 py-4 rounded-2xl border border-zinc-200 text-zinc-700 font-bold active:scale-[0.98] active:bg-slate-100 transition-all text-base cursor-pointer"
                 >
                   Voltar
                 </button>
@@ -622,9 +622,9 @@ export default function QuizApp() {
                     }
                   }}
                   disabled={!isStep2Valid}
-                  className={`px-10 py-4 rounded-xl font-bold transition-all text-base flex items-center justify-center gap-2 ${
+                  className={`px-10 py-4 rounded-2xl font-bold transition-all text-base flex items-center justify-center gap-2 ${
                     isStep2Valid
-                      ? "bg-[#2C3647] text-white hover:bg-[#1E293B] shadow-md cursor-pointer"
+                      ? "bg-[#2C3647] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-md cursor-pointer"
                       : "bg-zinc-100 text-zinc-400 cursor-not-allowed border border-zinc-200"
                   }`}
                 >
@@ -678,18 +678,18 @@ export default function QuizApp() {
                 </div>
               )}
 
-              <div className="space-y-1.5 relative z-10">
+              <div className="space-y-2 relative z-10">
                 <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#2C3647] font-bold block">
                   Desafio {currentQuestionIndex + 1} de {quizJourneyConfig.questions.length}
                 </span>
-                <h2 className="text-2xl font-black text-[#2C3647] leading-snug">
+                <h2 className="text-3xl md:text-4xl font-extrabold text-[#2C3647] leading-snug">
                   {currentQuestion.question}
                 </h2>
               </div>
 
               {currentQuestion.id === 3 ? (
                 <div className="space-y-6 relative z-10">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-4">
                     {currentQuestion.options.map((option, idx) => {
                       const isSelected = selectedChannels.includes(option.text);
                       return (
@@ -703,10 +703,10 @@ export default function QuizApp() {
                                 : [...prev, option.text]
                             );
                           }}
-                          className={`p-5 rounded-2xl border text-center text-base font-semibold transition-all cursor-pointer ${
+                          className={`p-5 rounded-2xl border text-center text-lg md:text-xl font-bold transition-all cursor-pointer active:scale-[0.98] active:bg-slate-100 ${
                             isSelected 
-                              ? "bg-slate-100 border-[#2C3647] text-[#2C3647] font-bold shadow-md scale-[1.02]"
-                              : "bg-white border-zinc-200 text-zinc-700 hover:bg-slate-50"
+                              ? "bg-slate-100 border-[#2C3647] text-[#2C3647] shadow-md scale-[1.02]"
+                              : "bg-white border-zinc-200 text-zinc-700"
                           }`}
                         >
                           {option.text}
@@ -714,52 +714,15 @@ export default function QuizApp() {
                       );
                     })}
                   </div>
-                  <div className="pt-4">
-                    <button
-                      type="button"
-                      disabled={selectedChannels.length === 0}
-                      onClick={() => {
-                        // Salva os canais escolhidos em quizAnswers e avança
-                        setQuizAnswers(prev => ({ ...prev, 3: selectedChannels }));
-                        
-                        // Calcula pontuações de canais
-                        setQuizToolScores(prev => {
-                          const next = { ...prev };
-                          selectedChannels.forEach(chan => {
-                            const opt = currentQuestion.options.find(o => o.text === chan);
-                            if (opt && opt.scores) {
-                              if (opt.scores.faq) next.faq += opt.scores.faq;
-                              if (opt.scores.sales) next.sales += opt.scores.sales;
-                              if (opt.scores.info) next.info += opt.scores.info;
-                              if (opt.scores.cart) next.cart += opt.scores.cart;
-                            }
-                          });
-                          return next;
-                        });
-
-                        setCurrentQuestionIndex((prev) => prev + 1);
-                      }}
-                      className={`w-full py-5 rounded-2xl font-black text-lg tracking-wide uppercase transition-all flex items-center justify-center gap-2 ${
-                        selectedChannels.length > 0
-                          ? "bg-[#2C3647] text-white hover:bg-[#1E293B] shadow-md cursor-pointer"
-                          : "bg-zinc-100 text-zinc-400 cursor-not-allowed border border-zinc-200"
-                      }`}
-                    >
-                      Avançar
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                      </svg>
-                    </button>
-                  </div>
                 </div>
               ) : (
-                <div className="space-y-4 relative z-10">
+                <div className="grid grid-cols-2 gap-4 relative z-10">
                   {currentQuestion.options.map((option, idx) => {
                     const isSelected = selectedOptionText === option.text;
                     const isIncorrect = isSelected && !option.isCorrect;
                     const isCorrect = isSelected && option.isCorrect;
 
-                    let pillStyle = "border-zinc-200 bg-white hover:bg-slate-50 text-slate-800 shadow-sm";
+                    let pillStyle = "border-zinc-200 bg-white active:bg-slate-100 active:scale-[0.98] text-slate-800 shadow-sm transition-all duration-150";
                     if (isSelected) {
                       if (isCorrect) {
                         pillStyle = "border-[#2C3647] bg-slate-100 text-[#2C3647] shadow-[0_0_15px_rgba(44,54,71,0.1)]";
@@ -769,14 +732,14 @@ export default function QuizApp() {
                     }
 
                     return (
-                      <div key={idx} className="space-y-2">
+                      <div key={idx} className="flex flex-col gap-2">
                         <button
                           type="button"
                           onClick={() => handleSelectQuizOption(option)}
                           className={`w-full text-left p-5 rounded-2xl border transition-all duration-200 cursor-pointer ${pillStyle}`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="font-semibold text-base pr-4">{option.text}</span>
+                            <span className="font-bold text-lg md:text-xl pr-4">{option.text}</span>
                             <div className={`w-6 h-6 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${
                               isSelected && isCorrect ? "bg-[#2C3647] border-transparent text-white" :
                               isSelected && isIncorrect ? "bg-red-500 border-transparent text-white" :
@@ -803,8 +766,9 @@ export default function QuizApp() {
                 </div>
               )}
 
-              <div className="flex justify-between items-center pt-5 border-t border-zinc-200 relative z-10">
+              <div className="flex justify-between items-center pt-6 border-t border-zinc-200 relative z-10 mt-8">
                 <button
+                  type="button"
                   onClick={() => {
                     if (currentQuestionIndex > 0) {
                       setCurrentQuestionIndex((prev) => prev - 1);
@@ -815,13 +779,52 @@ export default function QuizApp() {
                       setStep(1);
                     }
                   }}
-                  className="px-6 py-3 rounded-xl border border-zinc-200 text-zinc-700 font-bold hover:bg-zinc-50 transition-colors text-sm cursor-pointer"
+                  className="px-8 py-4 rounded-2xl border border-zinc-200 text-[#2C3647] font-bold active:scale-[0.98] active:bg-slate-100 transition-all text-base cursor-pointer"
                 >
                   Voltar
                 </button>
-                <div className="text-xs text-slate-400 font-mono">
+                
+                <div className="text-sm text-slate-400 font-mono font-bold">
                   Pontos: {score}/{quizJourneyConfig.questions.length}
                 </div>
+
+                {currentQuestion.id === 3 && (
+                  <button
+                    type="button"
+                    disabled={selectedChannels.length === 0}
+                    onClick={() => {
+                      // Salva os canais escolhidos em quizAnswers e avança
+                      setQuizAnswers(prev => ({ ...prev, 3: selectedChannels }));
+                      
+                      // Calcula pontuações de canais
+                      setQuizToolScores(prev => {
+                        const next = { ...prev };
+                        selectedChannels.forEach(chan => {
+                          const opt = currentQuestion.options.find(o => o.text === chan);
+                          if (opt && opt.scores) {
+                            if (opt.scores.faq) next.faq += opt.scores.faq;
+                            if (opt.scores.sales) next.sales += opt.scores.sales;
+                            if (opt.scores.info) next.info += opt.scores.info;
+                            if (opt.scores.cart) next.cart += opt.scores.cart;
+                          }
+                        });
+                        return next;
+                      });
+
+                      setCurrentQuestionIndex((prev) => prev + 1);
+                    }}
+                    className={`px-8 py-4 rounded-2xl font-black text-base tracking-wide uppercase transition-all flex items-center justify-center gap-2 ${
+                      selectedChannels.length > 0
+                        ? "bg-[#2C3647] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-md cursor-pointer"
+                        : "bg-zinc-100 text-zinc-400 cursor-not-allowed border border-zinc-200"
+                    }`}
+                  >
+                    Avançar
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </button>
+                )}
               </div>
             </motion.div>
           )}
@@ -932,7 +935,7 @@ export default function QuizApp() {
               <div className="w-full max-w-md pt-4">
                 <button
                   onClick={handleReset}
-                  className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-[#2C3647] text-white hover:bg-[#1E293B] shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer block"
+                  className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-[#2C3647] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-lg transition-all duration-150 cursor-pointer block"
                 >
                   Finalizar DeepDive
                 </button>

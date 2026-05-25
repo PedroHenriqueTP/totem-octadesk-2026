@@ -116,3 +116,15 @@ body {
   box-shadow: 0 0 20px rgba(44, 54, 71, 0.15);
   background: #F8FAFC;
 }
+
+/* Tablet-First Ergonomics Adjustments */
+input, button, select, textarea, [role="button"], .card-solucao, .octo-container {
+  touch-action: manipulation;
+}
+
+/* Hide scrollbars during the main quiz journey to prevent viewport bounce on touch */
+body:not(.admin-panel-root) {
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
