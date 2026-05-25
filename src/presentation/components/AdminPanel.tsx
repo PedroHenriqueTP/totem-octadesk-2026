@@ -11,6 +11,13 @@ export interface AdminLeadMetrics {
     controle: number;
     enterprise: number;
   };
+  porPrioridade: {
+    faq: number;
+    sales: number;
+    info: number;
+    cart: number;
+  };
+  tempoMedioJornada: number; // em segundos
 }
 
 export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -21,7 +28,9 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     totalLeads: 0,
     sincronizados: 0,
     pendentesOffline: 0,
-    porTrilha: { automacao: 0, atendimento: 0, controle: 0, enterprise: 0 }
+    porTrilha: { automacao: 0, atendimento: 0, controle: 0, enterprise: 0 },
+    porPrioridade: { faq: 0, sales: 0, info: 0, cart: 0 },
+    tempoMedioJornada: 0
   });
   const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
   const [heatMap, setHeatMap] = useState({ manha: 0, tarde: 0, noite: 0 });
@@ -31,16 +40,31 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const total = leads.length;
     const synced = leads.filter((l) => l.sincronizado === 1).length;
     const pending = total - synced;
+    
+    // Antigo mapeamento (Compatibilidade)
     const automacao = leads.filter((l) => l.perfil_bifurcado === "Automacao").length;
     const atendimento = leads.filter((l) => l.perfil_bifurcado === "Atendimento").length;
     const controle = leads.filter((l) => l.perfil_bifurcado === "Controle").length;
     const enterprise = leads.filter((l) => l.perfil_bifurcado === "Enterprise").length;
 
+    // Novo mapeamento DeepDive
+    const faq = leads.filter((l) => l.prioridade_ferramenta === "faq").length;
+    const sales = leads.filter((l) => l.prioridade_ferramenta === "sales").length;
+    const info = leads.filter((l) => l.prioridade_ferramenta === "info").length;
+    const cart = leads.filter((l) => l.prioridade_ferramenta === "cart").length;
+
+    // Calcula tempo médio de jornada
+    const leadsComTempo = leads.filter(l => l.tempo_jornada_segundos !== undefined && l.tempo_jornada_segundos > 0);
+    const somaTempo = leadsComTempo.reduce((acc, curr) => acc + (curr.tempo_jornada_segundos || 0), 0);
+    const tempoMedio = leadsComTempo.length > 0 ? Math.round(somaTempo / leadsComTempo.length) : 0;
+
     setMetrics({
       totalLeads: total,
       sincronizados: synced,
       pendentesOffline: pending,
-      porTrilha: { automacao, atendimento, controle, enterprise }
+      porTrilha: { automacao, atendimento, controle, enterprise },
+      porPrioridade: { faq, sales, info, cart },
+      tempoMedioJornada: tempoMedio
     });
 
     let m = 0, t = 0, n = 0;
@@ -119,6 +143,9 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       "transbordo_urgente",
       "score_quiz",
       "perfil_bifurcado",
+      "prioridade_ferramenta",
+      "tempo_jornada_segundos",
+      "is_potential_lead",
       "sincronizado",
       "criado_em",
     ];
@@ -136,6 +163,9 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         l.transbordo_urgente ? "Sim" : "Não",
         l.score_quiz ?? 0,
         l.perfil_bifurcado ?? "",
+        l.prioridade_ferramenta ?? "",
+        l.tempo_jornada_segundos ?? 0,
+        l.isPotentialLead ? "Sim" : "Não",
         l.sincronizado ?? 0,
         l.criado_em ?? "",
       ]
@@ -148,7 +178,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `diagnosticos_totem_emergencia_${Date.now()}.csv`);
+    link.setAttribute("download", `diagnosticos_deepdive_tablet_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -157,9 +187,9 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const getHeatColor = (count: number, max: number) => {
     if (count === 0) return "bg-slate-50 border-slate-200 text-slate-400";
     const ratio = count / (max || 1);
-    if (ratio < 0.35) return "bg-cyan-50/50 border-[#E2E8F0] text-cyan-700";
-    if (ratio < 0.7) return "bg-cyan-100/60 border-cyan-200 text-cyan-800 shadow-[0_0_12px_rgba(6,182,212,0.08)] font-bold";
-    return "bg-cyan-200 border-cyan-300 text-cyan-950 shadow-[0_0_20px_rgba(6,182,212,0.15)] font-extrabold";
+    if (ratio < 0.35) return "bg-slate-50 border-slate-200 text-[#2C3647]/70";
+    if (ratio < 0.7) return "bg-slate-100 border-slate-200 text-[#2C3647] font-bold";
+    return "bg-slate-200 border-[#2C3647]/30 text-[#2C3647] font-extrabold shadow-sm";
   };
 
   const maxHeat = Math.max(heatMap.manha, heatMap.tarde, heatMap.noite, 1);
@@ -168,14 +198,14 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F8FAFC] p-6">
         <div className="w-full max-w-md bg-white border border-[#E2E8F0] p-8 rounded-2xl shadow-2xl text-center">
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Acesso Restrito</h2>
-          <p className="text-slate-550 text-sm mb-6">Insira o PIN operacional da Octadesk para acessar o painel de sincronização</p>
+          <h2 className="text-2xl font-bold text-[#2C3647] mb-2">Acesso Restrito</h2>
+          <p className="text-slate-500 text-sm mb-6">Insira o PIN operacional do DeepDive para acessar o painel administrativo</p>
           <input
             type="password"
             maxLength={4}
             value={pin}
             onChange={(e) => verificarPin(e.target.value)}
-            className="w-full text-center py-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-3xl font-mono text-[#0052CC] focus:outline-none focus:border-[#0052CC] tracking-widest"
+            className="w-full text-center py-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-3xl font-mono text-[#2C3647] focus:outline-none focus:border-[#2C3647] tracking-widest"
             placeholder="****"
             autoFocus
           />
@@ -183,7 +213,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             onClick={onClose} 
             className="mt-6 text-xs text-slate-400 hover:text-slate-700 transition-colors uppercase tracking-wider block mx-auto cursor-pointer"
           >
-            Voltar ao Totem
+            Voltar ao Tablet
           </button>
         </div>
       </div>
@@ -191,28 +221,31 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   }
 
   const total = metrics.totalLeads || 1;
-  const countAutomacao = metrics.porTrilha.automacao;
-  const countAtendimento = metrics.porTrilha.atendimento;
-  const countControle = metrics.porTrilha.controle;
-  const countEnterprise = metrics.porTrilha.enterprise;
+  const { faq, sales, info, cart } = metrics.porPrioridade;
 
-  const pctAutomacao = Math.round((countAutomacao / total) * 100);
-  const pctAtendimento = Math.round((countAtendimento / total) * 100);
-  const pctControle = Math.round((countControle / total) * 100);
-  const pctEnterprise = Math.round((countEnterprise / total) * 100);
+  const pctFaq = Math.round((faq / total) * 100);
+  const pctSales = Math.round((sales / total) * 100);
+  const pctInfo = Math.round((info / total) * 100);
+  const pctCart = Math.round((cart / total) * 100);
 
-  const pAutomacao = (countAutomacao / total) * 100;
-  const pAtendimento = (countAtendimento / total) * 100;
-  const pControle = (countControle / total) * 100;
-  const pEnterprise = (countEnterprise / total) * 100;
+  const pFaq = (faq / total) * 100;
+  const pSales = (sales / total) * 100;
+  const pInfo = (info / total) * 100;
+  const pCart = (cart / total) * 100;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#F8FAFC] p-8 text-slate-800 pb-32">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-white p-8 text-slate-800 pb-32 admin-panel-root">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;600;800;900&display=swap');
+        .admin-panel-root {
+          font-family: 'Urbanist', 'Inter', sans-serif;
+        }
+      `}</style>
       <div className="max-w-6xl mx-auto">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-[#E2E8F0] pb-6 mb-8 gap-4">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-150 pb-6 mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-slate-900">OCTADESK CORE HUB</h1>
-            <p className="text-slate-555 text-sm">Monitoramento de Infraestrutura de Dados Offline-First | Fórum E-commerce Brasil 2026</p>
+            <h1 className="text-3xl font-black tracking-tight text-[#2C3647]">OCTADESK DEEPDIVE CORE HUB</h1>
+            <p className="text-slate-500 text-sm">Monitoramento de Infraestrutura de Dados Offline-First | Fórum E-commerce Brasil 2026</p>
           </div>
           <div className="flex gap-3">
             <button 
@@ -221,7 +254,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               className={`px-6 py-3 rounded-xl font-bold transition-all cursor-pointer ${
                 metrics.pendentesOffline === 0
                   ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none"
-                  : "bg-gradient-to-r from-[#0EA5E9] to-[#0052CC] hover:from-[#0284C7] hover:to-[#0047B3] text-white shadow-[0_4px_15px_rgba(0,82,204,0.2)]"
+                  : "bg-[#2C3647] hover:bg-[#1E293B] text-white shadow-md"
               }`}
             >
               {syncState === 'syncing' ? 'Sincronizando...' : 
@@ -231,31 +264,68 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-sm">
-            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Total de Participantes</p>
-            <h3 className="text-4xl font-black text-slate-900">{metrics.totalLeads}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-slate-50/50 border border-slate-100 p-6 rounded-3xl flex justify-between items-center shadow-sm">
+            <div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total de Participantes</p>
+              <h3 className="text-4xl font-black text-[#2C3647]">{metrics.totalLeads}</h3>
+            </div>
+            <div className="w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-2xl shadow-sm text-slate-400">
+              <svg className="w-5 h-5 text-[#2C3647]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
           </div>
-          <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-sm">
-            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Sincronizados na Nuvem</p>
-            <h3 className="text-4xl font-black text-emerald-600">{metrics.sincronizados}</h3>
+
+          <div className="bg-slate-50/50 border border-slate-100 p-6 rounded-3xl flex justify-between items-center shadow-sm">
+            <div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Tempo Médio de Jornada</p>
+              <h3 className="text-4xl font-black text-[#2C3647]">{metrics.tempoMedioJornada}s</h3>
+            </div>
+            <div className="w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-2xl shadow-sm text-slate-400">
+              <svg className="w-5 h-5 text-[#2C3647]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
           </div>
-          <div className={`border p-6 rounded-2xl transition-all shadow-sm ${
+
+          <div className="bg-slate-50/50 border border-slate-100 p-6 rounded-3xl flex justify-between items-center shadow-sm">
+            <div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Sincronizados na Nuvem</p>
+              <h3 className="text-4xl font-black text-emerald-600">{metrics.sincronizados}</h3>
+            </div>
+            <div className="w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-2xl shadow-sm text-slate-400">
+              <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+          </div>
+
+          <div className={`border p-6 rounded-3xl flex justify-between items-center transition-all shadow-sm ${
             metrics.pendentesOffline > 0 
-              ? "border-amber-300 bg-amber-50/50" 
-              : "border-[#E2E8F0] bg-white"
+              ? "border-amber-200 bg-amber-50/40" 
+              : "border-slate-100 bg-slate-50/50"
           }`}>
-            <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Retidos Offline</p>
-            <h3 className={`text-4xl font-black ${metrics.pendentesOffline > 0 ? "text-amber-600" : "text-slate-900"}`}>
-              {metrics.pendentesOffline}{' '}
-              {metrics.pendentesOffline > 0 && <span className="text-sm font-normal text-slate-550">aguardando rede</span>}
-            </h3>
+            <div>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Retidos Offline</p>
+              <h3 className={`text-4xl font-black ${metrics.pendentesOffline > 0 ? "text-amber-600" : "text-slate-900"}`}>
+                {metrics.pendentesOffline}{' '}
+                {metrics.pendentesOffline > 0 && <span className="text-xs font-normal text-slate-500 block sm:inline">aguardando rede</span>}
+              </h3>
+            </div>
+            <div className={`w-10 h-10 flex items-center justify-center bg-white border rounded-2xl shadow-sm ${
+              metrics.pendentesOffline > 0 ? "border-amber-200 text-amber-600" : "border-slate-100 text-slate-400"
+            }`}>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+              </svg>
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-sm space-y-6">
-            <h3 className="font-extrabold text-base text-slate-900">Distribuição por Estação</h3>
+            <h3 className="font-extrabold text-base text-[#2C3647]">Distribuição de Prioridades DeepDive</h3>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-8 py-2">
               <div className="relative w-40 h-40 flex-shrink-0">
@@ -264,77 +334,66 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   
                   {metrics.totalLeads > 0 && (
                     <>
-                      {pEnterprise > 0 && (
+                      {pCart > 0 && (
                         <circle
                           cx="18"
                           cy="18"
                           r="15.915"
                           fill="none"
-                          stroke="url(#gradEnterprise)"
+                          stroke="#F43F5E"
                           strokeWidth="4.2"
-                          strokeDasharray={`${pEnterprise} 100`}
+                          strokeDasharray={`${pCart} 100`}
                           strokeDashoffset="0"
                           className="transition-all duration-500 ease-out"
                         />
                       )}
                       
-                      {pAutomacao > 0 && (
+                      {pSales > 0 && (
                         <circle
                           cx="18"
                           cy="18"
                           r="15.915"
                           fill="none"
-                          stroke="url(#gradAutomacao)"
+                          stroke="#10B981"
                           strokeWidth="4.2"
-                          strokeDasharray={`${pAutomacao} 100`}
-                          strokeDashoffset={-pEnterprise}
+                          strokeDasharray={`${pSales} 100`}
+                          strokeDashoffset={-pCart}
                           className="transition-all duration-500 ease-out"
                         />
                       )}
                       
-                      {pAtendimento > 0 && (
+                      {pInfo > 0 && (
                         <circle
                           cx="18"
                           cy="18"
                           r="15.915"
                           fill="none"
-                          stroke="#A855F7"
+                          stroke="#8B5CF6"
                           strokeWidth="4.2"
-                          strokeDasharray={`${pAtendimento} 100`}
-                          strokeDashoffset={-(pEnterprise + pAutomacao)}
+                          strokeDasharray={`${pInfo} 100`}
+                          strokeDashoffset={-(pCart + pSales)}
                           className="transition-all duration-500 ease-out"
                         />
                       )}
                       
-                      {pControle > 0 && (
+                      {pFaq > 0 && (
                         <circle
                           cx="18"
                           cy="18"
                           r="15.915"
                           fill="none"
-                          stroke="#0052CC"
+                          stroke="#3B82F6"
                           strokeWidth="4.2"
-                          strokeDasharray={`${pControle} 100`}
-                          strokeDashoffset={-(pEnterprise + pAutomacao + pAtendimento)}
+                          strokeDasharray={`${pFaq} 100`}
+                          strokeDashoffset={-(pCart + pSales + pInfo)}
                           className="transition-all duration-500 ease-out"
                         />
                       )}
                     </>
                   )}
-                  
-                  <defs>
-                    <linearGradient id="gradAutomacao" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#0EA5E9" />
-                      <stop offset="100%" stopColor="#0052CC" />
-                    </linearGradient>
-                    <linearGradient id="gradEnterprise" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#0F172A" />
-                      <stop offset="100%" stopColor="#0EA5E9" />
-                    </linearGradient>
-                  </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-3xl font-black text-slate-900">{metrics.totalLeads}</span>
+                  <span className="text-3xl font-black text-[#2C3647]">{metrics.totalLeads}</span>
                   <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold">Total</span>
                 </div>
               </div>
@@ -342,41 +401,41 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               <div className="flex-1 w-full space-y-3">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-50 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-[#00E5FF] to-[#0052CC]"></span>
-                    <span className="uppercase tracking-wider">ESTAÇÃO AUTOMAÇÃO</span>
+                    <span className="w-3 h-3 rounded-full bg-[#F43F5E]"></span>
+                    <span className="uppercase tracking-wider">Recuperação de Carrinho</span>
                   </div>
-                  <span>{countAutomacao} ({pctAutomacao}%)</span>
+                  <span>{cart} ({pctCart}%)</span>
                 </div>
                 
                 <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-50 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#A855F7]"></span>
-                    <span className="uppercase tracking-wider">ESTAÇÃO ATENDIMENTO</span>
+                    <span className="w-3 h-3 rounded-full bg-[#10B981]"></span>
+                    <span className="uppercase tracking-wider">Agente de Vendas</span>
                   </div>
-                  <span>{countAtendimento} ({pctAtendimento}%)</span>
+                  <span>{sales} ({pctSales}%)</span>
                 </div>
                 
                 <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-50 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#0052CC]"></span>
-                    <span className="uppercase tracking-wider">ESTAÇÃO CONTROLE</span>
+                    <span className="w-3 h-3 rounded-full bg-[#8B5CF6]"></span>
+                    <span className="uppercase tracking-wider">Sistema de Notificação</span>
                   </div>
-                  <span>{countControle} ({pctControle}%)</span>
+                  <span>{info} ({pctInfo}%)</span>
                 </div>
                 
                 <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-55 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-[#0F172A] to-[#00E5FF]"></span>
-                    <span className="uppercase tracking-wider">ESTAÇÃO ENTERPRISE</span>
+                    <span className="w-3 h-3 rounded-full bg-[#3B82F6]"></span>
+                    <span className="uppercase tracking-wider">FAQ Automatizado</span>
                   </div>
-                  <span>{countEnterprise} ({pctEnterprise}%)</span>
+                  <span>{faq} ({pctFaq}%)</span>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-sm space-y-6">
-            <h3 className="font-extrabold text-base text-slate-900">Volumetria Temporal (Mapa de Calor do Evento)</h3>
+            <h3 className="font-extrabold text-base text-[#2C3647]">Volumetria Temporal (Mapa de Calor do Evento)</h3>
             <div className="grid grid-cols-3 gap-4 h-[178px]">
               <div className={`border p-4 rounded-xl flex flex-col justify-between transition-all duration-300 ${getHeatColor(heatMap.manha, maxHeat)}`}>
                 <div>
@@ -407,15 +466,11 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
         <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-sm mb-12">
           <div className="px-6 py-4 border-b border-[#E2E8F0] bg-slate-50/50 flex justify-between items-center">
-            <h3 className="font-bold text-sm text-slate-800">Registros Recentes em Cache</h3>
+            <h3 className="font-bold text-sm text-[#2C3647]">Registros Recentes em Cache</h3>
             <button 
               onClick={handleExportCSV}
               disabled={metrics.totalLeads === 0}
-              className={`text-xs font-bold uppercase tracking-wider border px-3 py-1.5 rounded transition-all ${
-                metrics.totalLeads === 0
-                  ? "border-slate-200 text-slate-405 cursor-not-allowed"
-                  : "border-[#0052CC]/30 text-[#0052CC] hover:bg-blue-50 cursor-pointer bg-white"
-              }`}
+              className={`text-xs font-bold uppercase tracking-wider border px-3 py-1.5 rounded transition-all border-[#2C3647]/30 text-[#2C3647] hover:bg-slate-50 cursor-pointer bg-white`}
             >
               Baixar Cópia CSV Local
             </button>
@@ -424,42 +479,63 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-[#E2E8F0] bg-slate-50 text-slate-500 text-xs font-bold uppercase">
+                <tr className="border-b border-slate-150 bg-slate-50/80 text-slate-500 text-xs font-bold uppercase">
                   <th className="p-4">Nome</th>
+                  <th className="p-4 text-center">Qualificação</th>
                   <th className="p-4">Empresa</th>
                   <th className="p-4">WhatsApp</th>
-                  <th className="p-4">Estação</th>
-                  <th className="p-4">Status</th>
+                  <th className="p-4">Tempo</th>
+                  <th className="p-4">Prioridade (DeepDive)</th>
+                  <th className="p-4 text-center">Status Nuvem</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 {recentLeads.map((lead) => (
                   <tr key={lead.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                    <td className="p-4 font-semibold text-slate-900">{lead.nome}</td>
-                    <td className="p-4 text-slate-555">{lead.empresa || '-'}</td>
-                    <td className="p-4 text-slate-555">{lead.contato || '-'}</td>
+                    <td className="p-4 font-bold text-slate-900">{lead.nome}</td>
+                    <td className="p-4 text-center">
+                      {lead.isPotentialLead ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-rose-50 border border-rose-100 text-rose-700 text-xs font-extrabold animate-pulse shadow-sm">
+                          🔥 Potencial MQL
+                        </span>
+                      ) : (
+                        <span className="inline-block px-2.5 py-1 rounded-full bg-slate-100 text-slate-400 text-xs font-medium">
+                          Comum
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4 text-slate-550">{lead.empresa || '-'}</td>
+                    <td className="p-4 text-slate-550 font-mono">{lead.contato || '-'}</td>
+                    <td className="p-4 text-slate-550 font-mono">{lead.tempo_jornada_segundos ? `${lead.tempo_jornada_segundos}s` : '-'}</td>
                     <td className="p-4">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        lead.perfil_bifurcado === 'Enterprise' ? 'bg-cyan-100 text-cyan-800' :
-                        lead.perfil_bifurcado === 'Automacao' ? 'bg-emerald-100 text-emerald-800' :
-                        lead.perfil_bifurcado === 'Atendimento' ? 'bg-purple-100 text-purple-800' :
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        lead.prioridade_ferramenta === 'cart' ? 'bg-rose-100 text-rose-800' :
+                        lead.prioridade_ferramenta === 'sales' ? 'bg-emerald-100 text-emerald-800' :
+                        lead.prioridade_ferramenta === 'info' ? 'bg-purple-100 text-purple-800' :
                         'bg-blue-100 text-blue-800'
                       }`}>
-                        {lead.perfil_bifurcado === 'Automacao' ? 'Automação' : lead.perfil_bifurcado}
+                        {lead.prioridade_ferramenta ? (
+                          lead.prioridade_ferramenta === 'cart' ? 'Recuperação Carrinho' :
+                          lead.prioridade_ferramenta === 'sales' ? 'Agente de Vendas' :
+                          lead.prioridade_ferramenta === 'info' ? 'Notificação Proativa' :
+                          'FAQ Automatizado'
+                        ) : (
+                          lead.perfil_bifurcado || '-'
+                        )}
                       </span>
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 text-center">
                       {lead.sincronizado === 1 ? (
-                        <span className="text-emerald-600 font-bold text-xs">● Sincronizado</span>
+                        <span className="inline-flex items-center px-2.5 py-1 rounded bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-100 shadow-sm">✓ Sincronizado</span>
                       ) : (
-                        <span className="text-amber-500 font-bold text-xs">○ Pendente</span>
+                        <span className="inline-flex items-center px-2.5 py-1 rounded bg-amber-50 text-amber-700 font-bold text-xs border border-amber-100 shadow-sm">○ Pendente</span>
                       )}
                     </td>
                   </tr>
                 ))}
                 {recentLeads.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-500 font-mono">
+                    <td colSpan={7} className="p-8 text-center text-slate-550 font-mono">
                       [Nenhum participante em cache no IndexedDB]
                     </td>
                   </tr>
@@ -474,9 +550,9 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <div className="max-w-6xl mx-auto">
           <button 
             onClick={onClose}
-            className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-gradient-to-r from-[#0EA5E9] to-[#0052CC] hover:from-[#0284C7] hover:to-[#0047B3] text-white shadow-[0_8px_25px_rgba(0,82,204,0.25)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer block text-center"
+            className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-[#2C3647] hover:bg-[#1E293B] text-white shadow-[0_8px_25px_rgba(44,54,71,0.15)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer block text-center"
           >
-            Voltar ao Fluxo Principal (Totem)
+            Voltar ao Fluxo Principal (Tablet)
           </button>
         </div>
       </div>

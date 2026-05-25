@@ -6,6 +6,12 @@ export interface QuizQuestionOption {
   text: string;
   isCorrect: boolean;
   feedback: string;
+  scores: {
+    faq?: number;
+    sales?: number;
+    info?: number;
+    cart?: number;
+  };
 }
 
 export interface QuizQuestion {
@@ -14,72 +20,89 @@ export interface QuizQuestion {
   options: QuizQuestionOption[];
 }
 
+export const TOOLS_CONFIG = {
+  faq: {
+    name: "Atendimento Automatizado (FAQ)",
+    defense: "Foco total na redução de custos operacionais e tempo de resposta de dúvidas repetitivas. Libera a equipe humana para tratar apenas de casos complexos e estratégicos."
+  },
+  sales: {
+    name: "Agente de Automação (Vendas)",
+    defense: "Foco na atração e qualificação de clientes em tempo real. Prospecção automatizada de leads 24/7 para garantir que nenhum cliente fique sem resposta na jornada comercial."
+  },
+  info: {
+    name: "Sistema de Notificação (Informativo)",
+    defense: "Foco na proatividade operacional. Envia notificações automáticas de status de pedido e atualizações aos clientes antes que eles precisem perguntar, eliminando o estresse pós-venda."
+  },
+  cart: {
+    name: "Recuperação de Carrinho Abandonado",
+    defense: "Foco na conversão cirúrgica de vendas perdidas no checkout. Identifica desistências e reengaja o usuário via mensagens e ofertas dinâmicas no WhatsApp para recuperar receita imediata."
+  }
+};
+
 export const quizJourneyConfig = {
-  // Banco de Questões Interativas (Metodologia de Desafio Gamificado)
   questions: [
     {
       id: 1,
-      question: "Sua Operação está recebendo muitos requests e o time de Atendimento não está dando conta da Demanda. O que você faz?",
+      question: "Quantas mentes comandam o seu atendimento hoje?",
       options: [
-        { text: "Contrato mais atendentes imediatamente para apagar o incêndio.", isCorrect: false, feedback: "Contratar em massa eleva o custo e o tempo de treinamento é lento." },
-        { text: "Forço a equipe a fazer hora extra para zerar a fila.", isCorrect: false, feedback: "Gera sobrecarga, turnover alto e queda na qualidade do suporte." },
-        { text: "Limito o atendimento e deixo os clientes esperando.", isCorrect: false, feedback: "Isso aumenta a taxa de abandono e queima a imagem da marca." },
-        { text: "Implemento robôs/IA para triar e resolver demandas simples.", isCorrect: true, feedback: "Correto! A inteligência artificial escala sua operação sem inflar o custo da folha de pagamento." }
+        { text: "1 (Eu sozinho)", isCorrect: true, feedback: "Mapeado para triagem inicial simplificada.", scores: { faq: 1 } },
+        { text: "2 a 5", isCorrect: true, feedback: "Mapeado para escala comercial de micro-equipe.", scores: { sales: 1 } },
+        { text: "6 a 15", isCorrect: true, feedback: "Mapeado para suporte e atendimento estruturado.", scores: { info: 1 } },
+        { text: "Mais de 15", isCorrect: true, feedback: "Mapeado para recuperação e alta demanda transacional.", scores: { cart: 1 } }
       ]
     },
     {
       id: 2,
-      question: "O seu cliente inicia o contacto pelo WhatsApp, depois envia um e-mail e, por fim, tenta o chat do site. A sua equipa perde-se em três ferramentas diferentes e envia respostas duplicadas. O que faz?",
+      question: "Qual seu volume mensal de vendas ou emissão de notas?",
       options: [
-        { text: "Exijo que a equipe olhe as três telas ao mesmo tempo.", isCorrect: false, feedback: "Isso gera erro humano, respostas duplicadas e lentidão absurda." },
-        { text: "Desligo os outros canais e forço todos a usarem só e-mail.", isCorrect: false, feedback: "Limitar o cliente reduz as chances de conversão. O cliente moderno é omnichannel." },
-        { text: "Centralizo todos os canais em uma única plataforma.", isCorrect: true, feedback: "Exato! Com a Octadesk, o time usa uma única tela para WhatsApp, Instagram, E-mail e Chat." },
-        { text: "Crio uma planilha para registrar de qual canal o cliente veio.", isCorrect: false, feedback: "Gestão manual gera atrasos e os dados ficam obsoletos rapidamente." }
+        { text: "Até 100", isCorrect: true, feedback: "Triagem para baixo volume de processamento.", scores: { faq: 1 } },
+        { text: "101 a 500", isCorrect: true, feedback: "Qualificação comercial de médio volume.", scores: { sales: 1 } },
+        { text: "501 a 1000", isCorrect: true, feedback: "Mapeado para notificações ativas de entrega.", scores: { info: 1 } },
+        { text: "Mais de 1000", isCorrect: true, feedback: "Mapeado para recuperação avançada de checkout.", scores: { cart: 1 } }
       ]
     },
     {
       id: 3,
-      question: "O gestor da operação precisa de saber qual é o tempo médio de primeira resposta (SLA) da equipa para apresentar relatórios à diretoria, mas os dados estão espalhados em folhas de cálculo manuais. O que faz?",
+      question: "Por quais canais seus clientes mais chegam?",
       options: [
-        { text: "Peço para cada atendente cronometrar suas próprias conversas.", isCorrect: false, feedback: "Impossível de auditar, gerando dados não confiáveis e perda de produtividade." },
-        { text: "Consolido os dados do Excel manualmente toda sexta-feira.", isCorrect: false, feedback: "Processo extremamente braçal e suscetível a erros, atrasando a tomada de decisão." },
-        { text: "Utilizo painéis de dashboard e métricas gerados em tempo real.", isCorrect: true, feedback: "Perfeito! A visão de BI e relatórios automatizados são vitais para gerenciar a saúde da operação." },
-        { text: "Aviso à diretoria que é impossível calcular o SLA com precisão.", isCorrect: false, feedback: "Isso demonstra falta de controle operacional e gera insegurança corporativa." }
+        { text: "WhatsApp", isCorrect: true, feedback: "Automatização ideal para chat do WhatsApp.", scores: { sales: 1 } },
+        { text: "Instagram", isCorrect: true, feedback: "Automatização ideal para vendas em redes sociais.", scores: { sales: 1 } },
+        { text: "E-mail", isCorrect: true, feedback: "Automatização para canais clássicos.", scores: { faq: 1 } },
+        { text: "Chat no Site", isCorrect: true, feedback: "Mapeamento de FAQ direto no chat do site.", scores: { faq: 1 } },
+        { text: "Telefone", isCorrect: true, feedback: "Auxílio de triagem e informação ativa.", scores: { info: 1 } }
       ]
     },
     {
       id: 4,
-      question: "Durante a madrugada, a sua empresa continua a receber solicitações de suporte, mas não há agentes disponíveis, gerando insatisfação nos clientes logo no início da manhã. O que faz?",
+      question: "Como você lida com as dúvidas repetitivas e vendas hoje?",
       options: [
-        { text: "Contrato uma equipe de plantão 24/7 de madrugada.", isCorrect: false, feedback: "Custo altíssimo de adicional noturno que não compensa o volume de atendimentos na madrugada." },
-        { text: "Deixo uma mensagem dizendo que o atendimento só funciona em horário comercial.", isCorrect: false, feedback: "O cliente desiste da compra ao não ter uma resposta imediata na jornada dele." },
-        { text: "Ignoro e o time do turno da manhã que se vire com a fila.", isCorrect: false, feedback: "A equipe da manhã já chega sobrecarregada, e o SLA das primeiras horas vai pro espaço." },
-        { text: "Aciono um bot de IA para dar suporte e até fechar vendas enquanto a equipe dorme.", isCorrect: true, feedback: "Excelente! O Bot da Octadesk mantém o motor de vendas e suporte ativo 24 horas por dia." }
+        { text: "100% Manual", isCorrect: true, feedback: "Necessidade crítica de automação de vendas e FAQ.", scores: { sales: 1 } },
+        { text: "Uso algumas automações", isCorrect: true, feedback: "Ideal para otimização de carrinhos abandonados.", scores: { cart: 1 } },
+        { text: "Já sou automatizado", isCorrect: true, feedback: "Mapeado para envio proativo de status pós-compra.", scores: { info: 1 } }
       ]
     },
     {
       id: 5,
-      question: "A sua equipa de atendimento gasta metade do dia a responder exatamente à mesma pergunta: \"Qual é o prazo de entrega?\". Isso atrasa os casos mais complexos. O que faz?",
+      question: "Qual o seu principal desafio para este semestre?",
       options: [
-        { text: "Crio atalhos de teclado com a resposta pronta para eles colarem.", isCorrect: false, feedback: "Mesmo colando, o agente precisa parar e ler a mensagem, o que toma tempo humano valioso." },
-        { text: "Escondo a política de frete no site para ver se eles procuram mais.", isCorrect: false, feedback: "Gerar atrito intencional destrói a experiência de navegação do usuário." },
-        { text: "Automatizo um fluxo de FAQ no WhatsApp para dúvidas frequentes.", isCorrect: true, feedback: "Na mosca! Automatizar respostas recorrentes tira o peso da operação e foca o humano apenas no que é complexo." },
-        { text: "Mando o cliente ler o site toda vez que perguntar.", isCorrect: false, feedback: "Péssima postura consultiva. Você perde oportunidades de up-sell ao ser ríspido." }
+        { text: "Recuperar vendas perdidas", isCorrect: true, feedback: "Mapeado para recuperação de carrinho abandonado.", scores: { cart: 2 } },
+        { text: "Escalar sem contratar mais gente", isCorrect: true, feedback: "Mapeado para agente de automação de vendas.", scores: { sales: 2 } },
+        { text: "Reduzir tempo de resposta", isCorrect: true, feedback: "Mapeado para FAQ e atendimento automatizado.", scores: { faq: 2 } },
+        { text: "Organizar a bagunça dos canais", isCorrect: true, feedback: "Mapeado para envio proativo de notificações.", scores: { info: 2 } }
       ]
     }
   ] as QuizQuestion[],
 
-  // Regra de Negócio para Distribuição de Brindes e Transbordo
   rewards: {
     high_score: {
       title: "Mestre da Eficiência Operacional",
       brinde: "Kit Premium Octadesk (Garrafa Inox + Caderno Executive)",
-      badgeColor: "#00E5FF"
+      badgeColor: "#2C3647"
     },
     participation: {
       title: "Explorador do Ecossistema",
       brinde: "Brinde Oficial Fórum 2026 (PopSocket + Stickers Exclusivos)",
-      badgeColor: "#00DA70"
+      badgeColor: "#4A5A70"
     }
   }
 };

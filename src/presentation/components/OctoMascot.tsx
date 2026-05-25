@@ -16,38 +16,75 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
           width: 100%;
           max-width: 220px;
           margin: 0 auto;
+          user-select: none;
         }
         
         .octo-svg {
           width: 100%;
           height: auto;
           transform-origin: center;
-          transition: all 0.5s ease-in-out;
-          animation: float 4s ease-in-out infinite;
+          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+          animation: float-minimal 4s ease-in-out infinite;
         }
 
-        .octo-svg.thinking {
-          filter: drop-shadow(0px 0px 15px rgba(0, 229, 255, 0.6));
+        /* Efeitos de estado e ativação de brilho de fundo sutil e corporativo */
+        .glow-backdrop {
+          transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+          fill: #4A5A70;
+          opacity: 0;
+        }
+
+        .octo-svg.thinking .glow-backdrop {
+          opacity: 0.12;
+          animation: glow-pulse 2s ease-in-out infinite alternate;
+        }
+
+        .octo-svg.success .glow-backdrop {
+          opacity: 0.22;
+          animation: success-glow 1.5s ease-in-out infinite alternate;
         }
 
         .octo-svg.success {
-          filter: drop-shadow(0px 0px 30px rgba(0, 229, 255, 0.9));
-          animation: float 2s ease-in-out infinite, successPulse 0.6s ease-in-out forwards;
+          transform: scale(1.04);
+          animation: float-minimal 2s ease-in-out infinite, success-bounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        @keyframes float {
+        /* Animações */
+        @keyframes float-minimal {
           0%, 100% {
             transform: translateY(0px);
           }
           50% {
-            transform: translateY(-4px);
+            transform: translateY(-5px);
           }
         }
 
-        @keyframes successPulse {
+        @keyframes glow-pulse {
+          0% {
+            r: 80px;
+            opacity: 0.08;
+          }
+          100% {
+            r: 100px;
+            opacity: 0.2;
+          }
+        }
+
+        @keyframes success-glow {
+          0% {
+            r: 90px;
+            opacity: 0.15;
+          }
+          100% {
+            r: 115px;
+            opacity: 0.35;
+          }
+        }
+
+        @keyframes success-bounce {
           0% { transform: scale(1); }
           50% { transform: scale(1.08); }
-          100% { transform: scale(1.03); }
+          100% { transform: scale(1.04); }
         }
       `}</style>
 
@@ -58,161 +95,88 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          {/* Gradiente radial 3D metálico prateado para o corpo */}
-          <radialGradient id="chromeBody" cx="30%" cy="30%" r="70%" fx="30%" fy="30%">
-            <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="15%" stopColor="#F1F5F9" />
-            <stop offset="45%" stopColor="#CBD5E1" />
-            <stop offset="70%" stopColor="#94A3B8" />
-            <stop offset="90%" stopColor="#475569" />
-            <stop offset="100%" stopColor="#1E293B" />
-          </radialGradient>
-
-          {/* Gradiente linear metálico prateado para os tentáculos */}
-          <linearGradient id="chromeTentacle" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#F8FAFC" />
-            <stop offset="25%" stopColor="#E2E8F0" />
-            <stop offset="50%" stopColor="#94A3B8" />
-            <stop offset="75%" stopColor="#475569" />
-            <stop offset="100%" stopColor="#1E293B" />
-          </linearGradient>
-
-          {/* Gradiente linear Navy Blue com múltiplos stops para a haste do Headset */}
-          <linearGradient id="headsetBand" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#001833" />
-            <stop offset="25%" stopColor="#002B5C" />
-            <stop offset="50%" stopColor="#004799" />
-            <stop offset="75%" stopColor="#002B5C" />
-            <stop offset="100%" stopColor="#001833" />
-          </linearGradient>
-
-          {/* Gradiente linear Navy Blue de alta qualidade para as conchas laterais */}
-          <linearGradient id="earCup" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#002B5C" />
-            <stop offset="40%" stopColor="#001F42" />
-            <stop offset="80%" stopColor="#001026" />
-            <stop offset="100%" stopColor="#000714" />
-          </linearGradient>
-
-          {/* Gradiente para a haste do microfone */}
-          <linearGradient id="micArm" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#475569" />
-            <stop offset="100%" stopColor="#1E293B" />
-          </linearGradient>
-
-          {/* Brilho da testa */}
-          <radialGradient id="glossyHighlight" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+          {/* Brilho radial de fundo sutil */}
+          <radialGradient id="slateBackdropGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#4A5A70" stopOpacity="1" />
+            <stop offset="100%" stopColor="#4A5A70" stopOpacity="0" />
           </radialGradient>
         </defs>
 
-        {/* Tentáculos cromados 3D com contorno de sombra escura */}
-        <g strokeLinecap="round" fill="none">
-          {/* Camada inferior de sombra/contorno escuro para os tentáculos */}
-          <g stroke="#1E293B" strokeWidth="17" opacity="0.9">
-            <path d="M 80 145 C 45 165, 30 195, 45 220" />
-            <path d="M 100 155 C 75 185, 65 210, 80 225" />
-            <path d="M 118 160 C 100 195, 100 215, 115 228" />
-            <path d="M 122 160 C 140 195, 140 215, 125 228" />
-            <path d="M 140 155 C 165 185, 175 210, 160 225" />
-            <path d="M 160 145 C 195 165, 210 195, 195 220" />
-          </g>
-          {/* Camada superior cromada */}
-          <g stroke="url(#chromeTentacle)" strokeWidth="13">
-            <path d="M 80 145 C 45 165, 30 195, 45 220" />
-            <path d="M 100 155 C 75 185, 65 210, 80 225" />
-            <path d="M 118 160 C 100 195, 100 215, 115 228" />
-            <path d="M 122 160 C 140 195, 140 215, 125 228" />
-            <path d="M 140 155 C 165 185, 175 210, 160 225" />
-            <path d="M 160 145 C 195 165, 210 195, 195 220" />
-          </g>
-        </g>
-
-        {/* Corpo principal (Cabeça) */}
-        <path 
-          d="M 75 105 C 75 45, 165 45, 165 105 C 165 138, 150 150, 120 150 C 90 150, 75 138, 75 105 Z" 
-          fill="url(#chromeBody)" 
-          stroke="#1E293B" 
-          strokeWidth="2.5" 
+        {/* Círculo de ativação de fundo sutil */}
+        <circle 
+          className="glow-backdrop" 
+          cx="120" 
+          cy="120" 
+          r="95" 
+          fill="url(#slateBackdropGrad)"
         />
 
-        {/* Brilho cromado na testa (Highlight 3D) */}
-        <ellipse 
-          cx="102" 
-          cy="70" 
-          rx="18" 
-          ry="10" 
-          fill="url(#glossyHighlight)" 
-          transform="rotate(-15, 102, 70)" 
-          opacity="0.75" 
+        {/* Squircle Oficial da Marca (#2C3647) */}
+        <rect 
+          x="30" 
+          y="30" 
+          width="180" 
+          height="180" 
+          rx="44" 
+          fill="#2C3647" 
+          stroke="rgba(255, 255, 255, 0.03)"
+          strokeWidth="1"
         />
 
-        {/* Olhos 3D com contorno */}
-        <g>
-          {/* Olho Esquerdo */}
-          <circle cx="100" cy="102" r="13" fill="#FFFFFF" stroke="#1E293B" strokeWidth="2" />
-          <circle cx="100" cy="102" r="6" fill="#002B5C" />
-          <circle cx="98" cy="100" r="2" fill="#FFFFFF" />
-
-          {/* Olho Direito */}
-          <circle cx="140" cy="102" r="13" fill="#FFFFFF" stroke="#1E293B" strokeWidth="2" />
-          <circle cx="140" cy="102" r="6" fill="#002B5C" />
-          <circle cx="138" cy="100" r="2" fill="#FFFFFF" />
-        </g>
-
-        {/* Sorriso simpático */}
+        {/* Corpo do Polvo Minimalista Branco (#FFFFFF) - Peça Única Plana */}
         <path 
-          d="M 114 122 Q 120 128 126 122" 
-          stroke="#1E293B" 
-          strokeWidth="2.5" 
-          strokeLinecap="round" 
-          fill="none" 
+          d="M 120,70 
+             C 145,70 162,88 162,112 
+             C 162,126 156,132 150,136 
+             C 155,140 168,142 178,146 
+             C 192,152 194,164 186,172 
+             C 178,180 166,176 158,164 
+             C 152,156 145,148 142,140 
+             C 140,150 142,166 138,180 
+             C 134,194 124,194 122,180 
+             C 120,166 120,152 120,144 
+             C 120,152 120,166 118,180 
+             C 116,194 106,194 102,180 
+             C 98,166 100,150 98,140 
+             C 95,148 88,156 82,164 
+             C 74,176 62,180 54,172 
+             C 46,164 48,152 62,146 
+             C 72,142 85,140 90,136 
+             C 84,132 78,126 78,112 
+             C 78,88 95,70 120,70 Z" 
+          fill="#FFFFFF" 
         />
 
-        {/* Headset Navy Blue */}
-        {/* Haste do Headset (Arco) */}
+        {/* Headset de Atendimento Integrado (Flat e Elegante #4A5A70) */}
+        {/* Haste do Headset (Fina, contornando o topo da cabeça de forma externa) */}
         <path 
-          d="M 73 90 A 58 58 0 0 1 167 90" 
-          stroke="#001833" 
-          strokeWidth="9" 
-          fill="none" 
-        />
-        <path 
-          d="M 73 90 A 58 58 0 0 1 167 90" 
-          stroke="url(#headsetBand)" 
-          strokeWidth="6" 
-          fill="none" 
-        />
-
-        {/* Conectores metálicos das conchas */}
-        <path d="M 68 85 L 68 95" stroke="#CBD5E1" strokeWidth="3" strokeLinecap="round" />
-        <path d="M 172 85 L 172 95" stroke="#CBD5E1" strokeWidth="3" strokeLinecap="round" />
-
-        {/* Conchas (Ear Cups) */}
-        <rect x="58" y="88" width="18" height="34" rx="6" fill="url(#earCup)" stroke="#001833" strokeWidth="2" />
-        <rect x="164" y="88" width="18" height="34" rx="6" fill="url(#earCup)" stroke="#001833" strokeWidth="2" />
-
-        {/* Haste do Microfone (Saindo do fone esquerdo) */}
-        <path 
-          d="M 67 114 Q 78 136, 102 131" 
-          stroke="url(#micArm)" 
+          d="M 72 96 C 72 58, 168 58, 168 96" 
+          stroke="#4A5A70" 
           strokeWidth="3.5" 
           fill="none" 
+          strokeLinecap="round"
+        />
+        
+        {/* Conchas Laterais Discretas (Earcups) */}
+        <rect x="66" y="86" width="7" height="18" rx="2" fill="#4A5A70" />
+        <rect x="167" y="86" width="7" height="18" rx="2" fill="#4A5A70" />
+
+        {/* Haste do Microfone Fina e Elegante em #2C3647 (dentro da cabeça do polvo) */}
+        <path 
+          d="M 72 102 Q 80 124, 96 120" 
+          stroke="#2C3647" 
+          strokeWidth="2" 
+          fill="none" 
           strokeLinecap="round" 
         />
-        {/* Espuma do microfone (Direcionada à boca) */}
-        <rect 
-          x="99" 
-          y="126" 
-          width="9" 
-          height="11" 
-          rx="4.5" 
-          fill="#001833" 
-          stroke="#002B5C" 
-          strokeWidth="1.5" 
-        />
+        <circle cx="96" cy="120" r="3" fill="#2C3647" />
+
+        {/* Olhos - Elipses verticais simétricas oficiais (#2C3647) */}
+        <ellipse cx="106" cy="112" rx="5" ry="7.5" fill="#2C3647" />
+        <ellipse cx="134" cy="112" rx="5" ry="7.5" fill="#2C3647" />
       </svg>
     </div>
   );
 };
+
+export default OctoMascot;

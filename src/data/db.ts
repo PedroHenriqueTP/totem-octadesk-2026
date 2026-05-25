@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import { TamanhoOperacao, TrilhaResultado } from "../types/diagnostico";
+import { TamanhoOperacao, TrilhaResultado, ToolScores } from "../types/diagnostico";
 
 export interface Lead {
   id?: number;
@@ -16,6 +16,12 @@ export interface Lead {
   perfil_bifurcado?: TrilhaResultado;
   sincronizado: number;
   criado_em: string;
+  
+  // Propriedades do DeepDive de Tablet
+  toolScores?: ToolScores;
+  prioridade_ferramenta?: string;
+  tempo_jornada_segundos?: number;
+  isPotentialLead?: boolean;
   
   // Propriedades antigas mantidas como opcionais para compatibilidade
   totalFerramentas?: 'Apenas 1 (Centralizada)' | 'De 2 a 4 ferramentas' | 'De 5 a 10 ferramentas' | 'Mais de 10 ferramentas (Ecossistema complexo)';

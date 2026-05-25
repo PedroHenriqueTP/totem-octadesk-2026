@@ -12,3 +12,12 @@ export interface RespostasQuiz {
 }
 
 export type TrilhaResultado = 'Automacao' | 'Atendimento' | 'Controle' | 'Enterprise';
+
+export interface ToolScores {
+  faq: number;
+  sales: number;
+  info: number;
+  cart: number;
+}
+
+export type ToolPrioridade = 'faq' | 'sales' | 'info' | 'cart';

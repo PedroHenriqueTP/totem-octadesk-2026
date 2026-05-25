@@ -1,3 +1,5 @@
+import { ToolScores } from "../types/diagnostico";
+
 export interface LeadData {
   nome: string;
   empresa: string;
@@ -8,6 +10,10 @@ export interface LeadData {
   canais: string[];
   transbordoUrgente: boolean;
   scoreQuiz: number;
+  toolScores?: ToolScores;
+  prioridadeFerramenta?: string;
+  tempoJornadaSegundos?: number;
+  isPotentialLead?: boolean;
 }
 
 export type DestinoLead = 
@@ -21,4 +27,6 @@ export interface DiagnosticoResultado {
   focoProduto: string;
   mensagemInterface: string;
   brindeQualificado: boolean;
+  toolScores?: ToolScores;
+  prioridadeFerramenta?: string;
 }
