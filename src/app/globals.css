@@ -28,11 +28,11 @@
 }
 
 body {
-  background: radial-gradient(circle at center, var(--background-from) 0%, var(--background-to) 100%);
-  background-attachment: fixed;
-  color: var(--foreground);
+  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 50%, #E2E8F0 100%); /* Fundo degradê translúcido e luminoso claro */
+  color: #0F172A; /* Cinza grafite profundo para legibilidade sob forte luz */
   font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
+  min-height: 100vh;
 }
 
 .glow-cyan {

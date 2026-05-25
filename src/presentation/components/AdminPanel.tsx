@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { LocalStorageManager, LeadRegistrado } from '../../infra/local-storage-manager';
+import { db, Lead } from "../../data/db";
 
 export interface AdminLeadMetrics {
   totalLeads: number;
   sincronizados: number;
   pendentesOffline: number;
   porTrilha: {
-    transbordo: number;
     automacao: number;
-    gestao: number;
-    triagem: number;
+    atendimento: number;
+    controle: number;
+    enterprise: number;
   };
 }
 
@@ -21,32 +21,31 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     totalLeads: 0,
     sincronizados: 0,
     pendentesOffline: 0,
-    porTrilha: { transbordo: 0, automacao: 0, gestao: 0, triagem: 0 }
+    porTrilha: { automacao: 0, atendimento: 0, controle: 0, enterprise: 0 }
   });
-  const [recentLeads, setRecentLeads] = useState<LeadRegistrado[]>([]);
+  const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
   const [heatMap, setHeatMap] = useState({ manha: 0, tarde: 0, noite: 0 });
 
-  const carregarDados = () => {
-    const leads = LocalStorageManager.obterLeadsLocais();
+  const carregarDados = async () => {
+    const leads = await db.leads.toArray();
     const total = leads.length;
-    const synced = leads.filter((l) => l.sincronizado).length;
+    const synced = leads.filter((l) => l.sincronizado === 1).length;
     const pending = total - synced;
-    
-    const transbordo = leads.filter((l) => l.diagnostico?.destino === "TRANSBORDO_COMERCIAL_URGENTE").length;
-    const automacao = leads.filter((l) => l.diagnostico?.destino === "TRILHA_AUTOMACAO_ECOMMERCE").length;
-    const gestao = leads.filter((l) => l.diagnostico?.destino === "TRILHA_GESTAO_WHATSAPP").length;
-    const triagem = leads.filter((l) => l.diagnostico?.destino === "TRIAGEM_PADRAO").length;
+    const automacao = leads.filter((l) => l.perfil_bifurcado === "Automacao").length;
+    const atendimento = leads.filter((l) => l.perfil_bifurcado === "Atendimento").length;
+    const controle = leads.filter((l) => l.perfil_bifurcado === "Controle").length;
+    const enterprise = leads.filter((l) => l.perfil_bifurcado === "Enterprise").length;
 
     setMetrics({
       totalLeads: total,
       sincronizados: synced,
       pendentesOffline: pending,
-      porTrilha: { transbordo, automacao, gestao, triagem }
+      porTrilha: { automacao, atendimento, controle, enterprise }
     });
 
     let m = 0, t = 0, n = 0;
     leads.forEach((l) => {
-      const hours = new Date(l.timestamp).getHours();
+      const hours = new Date(l.criado_em).getHours();
       if (hours >= 8 && hours < 12) m++;
       else if (hours >= 12 && hours < 18) t++;
       else if (hours >= 18 && hours < 22) n++;
@@ -54,7 +53,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     setHeatMap({ manha: m, tarde: t, noite: n });
 
     const sortedLeads = [...leads]
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .sort((a, b) => new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime())
       .slice(0, 8);
     setRecentLeads(sortedLeads);
   };
@@ -75,8 +74,8 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const handleSync = async () => {
     try {
       setSyncState("syncing");
-      const pendingLeads = LocalStorageManager.obterFilaPendente();
-      if (pendingLeads.length === 0) {
+      const unsyncedLeads = await db.leads.where("sincronizado").equals(0).toArray();
+      if (unsyncedLeads.length === 0) {
         setSyncState("success");
         setTimeout(() => setSyncState("idle"), 2000);
         return;
@@ -85,17 +84,16 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       const response = await fetch("https://api.octadesk.com/v1/event-sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(pendingLeads),
+        body: JSON.stringify(unsyncedLeads),
       }).catch(() => {
         return { ok: true };
       });
 
       if (response.ok) {
-        pendingLeads.forEach((lead) => {
-          LocalStorageManager.marcarComoSincronizado(lead.id);
-        });
+        const ids = unsyncedLeads.map((l) => l.id).filter((id): id is number => id !== undefined);
+        await db.leads.where("id").anyOf(ids).modify({ sincronizado: 1 });
         setSyncState("success");
-        carregarDados();
+        await carregarDados();
         setTimeout(() => setSyncState("idle"), 2000);
       } else {
         setSyncState("error");
@@ -105,45 +103,41 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }
   };
 
-  const handleExportCSV = () => {
-    const allLeads = LocalStorageManager.obterLeadsLocais();
+  const handleExportCSV = async () => {
+    const allLeads = await db.leads.toArray();
     if (allLeads.length === 0) return;
 
     const headers = [
       "id",
-      "timestamp",
       "nome",
       "empresa",
       "email",
-      "telefone",
-      "faturamentoMensal",
+      "contato",
+      "tamanhoOperacao",
       "volumeVendasMes",
-      "equipeAtendimento",
-      "maiorGargalo",
-      "canalPrincipal",
-      "dorFinanceira",
-      "destino",
-      "brindeQualificado",
-      "sincronizado"
+      "canais",
+      "transbordo_urgente",
+      "score_quiz",
+      "perfil_bifurcado",
+      "sincronizado",
+      "criado_em",
     ];
 
     const rows = allLeads.map((l) =>
       [
-        l.id,
-        l.timestamp,
-        l.dados.nome || "",
-        l.dados.empresa || "",
-        l.dados.email || "",
-        l.dados.telefone || "",
-        l.dados.faturamentoMensal || "",
-        l.dados.volumeVendasMes || "",
-        l.dados.equipeAtendimento || "",
-        l.dados.maiorGargalo || "",
-        l.dados.canalPrincipal || "",
-        l.dados.dorFinanceira || "",
-        l.diagnostico?.destino || "",
-        l.diagnostico?.brindeQualificado ? "Sim" : "Não",
-        l.sincronizado ? "Sim" : "Não"
+        l.id ?? "",
+        l.nome ?? "",
+        l.empresa ?? "",
+        l.email ?? "",
+        l.contato ?? "",
+        l.tamanhoOperacao ?? "",
+        l.volumeVendasMes ?? "",
+        l.canais ? l.canais.join("; ") : "",
+        l.transbordo_urgente ? "Sim" : "Não",
+        l.score_quiz ?? 0,
+        l.perfil_bifurcado ?? "",
+        l.sincronizado ?? 0,
+        l.criado_em ?? "",
       ]
         .map((val) => `"${String(val).replace(/"/g, '""')}"`)
         .join(",")
@@ -154,14 +148,14 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `diagnosticos_leads_emergencia_${Date.now()}.csv`);
+    link.setAttribute("download", `diagnosticos_totem_emergencia_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   const getHeatColor = (count: number, max: number) => {
-    if (count === 0) return "bg-slate-50 border-slate-200 text-slate-404";
+    if (count === 0) return "bg-slate-50 border-slate-200 text-slate-400";
     const ratio = count / (max || 1);
     if (ratio < 0.35) return "bg-cyan-50/50 border-[#E2E8F0] text-cyan-700";
     if (ratio < 0.7) return "bg-cyan-100/60 border-cyan-200 text-cyan-800 shadow-[0_0_12px_rgba(6,182,212,0.08)] font-bold";
@@ -175,7 +169,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F8FAFC] p-6">
         <div className="w-full max-w-md bg-white border border-[#E2E8F0] p-8 rounded-2xl shadow-2xl text-center">
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Acesso Restrito</h2>
-          <p className="text-slate-500 text-sm mb-6">Insira o PIN operacional da Octadesk para acessar o painel administrativo</p>
+          <p className="text-slate-550 text-sm mb-6">Insira o PIN operacional da Octadesk para acessar o painel de sincronização</p>
           <input
             type="password"
             maxLength={4}
@@ -197,20 +191,20 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   }
 
   const total = metrics.totalLeads || 1;
-  const countTransbordo = metrics.porTrilha.transbordo;
   const countAutomacao = metrics.porTrilha.automacao;
-  const countGestao = metrics.porTrilha.gestao;
-  const countTriagem = metrics.porTrilha.triagem;
+  const countAtendimento = metrics.porTrilha.atendimento;
+  const countControle = metrics.porTrilha.controle;
+  const countEnterprise = metrics.porTrilha.enterprise;
 
-  const pctTransbordo = Math.round((countTransbordo / total) * 100);
   const pctAutomacao = Math.round((countAutomacao / total) * 100);
-  const pctGestao = Math.round((countGestao / total) * 100);
-  const pctTriagem = Math.round((countTriagem / total) * 100);
+  const pctAtendimento = Math.round((countAtendimento / total) * 100);
+  const pctControle = Math.round((countControle / total) * 100);
+  const pctEnterprise = Math.round((countEnterprise / total) * 100);
 
-  const pTransbordo = (countTransbordo / total) * 100;
   const pAutomacao = (countAutomacao / total) * 100;
-  const pGestao = (countGestao / total) * 100;
-  const pTriagem = (countTriagem / total) * 100;
+  const pAtendimento = (countAtendimento / total) * 100;
+  const pControle = (countControle / total) * 100;
+  const pEnterprise = (countEnterprise / total) * 100;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-[#F8FAFC] p-8 text-slate-800 pb-32">
@@ -218,7 +212,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-[#E2E8F0] pb-6 mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-black tracking-tight text-slate-900">OCTADESK CORE HUB</h1>
-            <p className="text-slate-500 text-sm">Monitoramento de Infraestrutura de Dados LocalStorage | Fórum E-commerce Brasil 2026</p>
+            <p className="text-slate-555 text-sm">Monitoramento de Infraestrutura de Dados Offline-First | Fórum E-commerce Brasil 2026</p>
           </div>
           <div className="flex gap-3">
             <button 
@@ -227,7 +221,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               className={`px-6 py-3 rounded-xl font-bold transition-all cursor-pointer ${
                 metrics.pendentesOffline === 0
                   ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none"
-                  : "bg-gradient-to-r from-[#00E5FF] to-[#0052CC] hover:from-[#00D0E6] hover:to-[#0047B3] text-white shadow-[0_4px_15px_rgba(0,82,204,0.2)]"
+                  : "bg-gradient-to-r from-[#0EA5E9] to-[#0052CC] hover:from-[#0284C7] hover:to-[#0047B3] text-white shadow-[0_4px_15px_rgba(0,82,204,0.2)]"
               }`}
             >
               {syncState === 'syncing' ? 'Sincronizando...' : 
@@ -244,7 +238,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </div>
           <div className="bg-white border border-[#E2E8F0] p-6 rounded-2xl shadow-sm">
             <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Sincronizados na Nuvem</p>
-            <h3 className="text-4xl font-black text-emerald-650">{metrics.sincronizados}</h3>
+            <h3 className="text-4xl font-black text-emerald-600">{metrics.sincronizados}</h3>
           </div>
           <div className={`border p-6 rounded-2xl transition-all shadow-sm ${
             metrics.pendentesOffline > 0 
@@ -254,7 +248,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">Retidos Offline</p>
             <h3 className={`text-4xl font-black ${metrics.pendentesOffline > 0 ? "text-amber-600" : "text-slate-900"}`}>
               {metrics.pendentesOffline}{' '}
-              {metrics.pendentesOffline > 0 && <span className="text-sm font-normal text-slate-500">aguardando rede</span>}
+              {metrics.pendentesOffline > 0 && <span className="text-sm font-normal text-slate-550">aguardando rede</span>}
             </h3>
           </div>
         </div>
@@ -270,15 +264,15 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   
                   {metrics.totalLeads > 0 && (
                     <>
-                      {pTransbordo > 0 && (
+                      {pEnterprise > 0 && (
                         <circle
                           cx="18"
                           cy="18"
                           r="15.915"
                           fill="none"
-                          stroke="#EAB308"
+                          stroke="url(#gradEnterprise)"
                           strokeWidth="4.2"
-                          strokeDasharray={`${pTransbordo} 100`}
+                          strokeDasharray={`${pEnterprise} 100`}
                           strokeDashoffset="0"
                           className="transition-all duration-500 ease-out"
                         />
@@ -290,43 +284,54 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                           cy="18"
                           r="15.915"
                           fill="none"
-                          stroke="#10B981"
+                          stroke="url(#gradAutomacao)"
                           strokeWidth="4.2"
                           strokeDasharray={`${pAutomacao} 100`}
-                          strokeDashoffset={-pTransbordo}
+                          strokeDashoffset={-pEnterprise}
                           className="transition-all duration-500 ease-out"
                         />
                       )}
                       
-                      {pGestao > 0 && (
+                      {pAtendimento > 0 && (
                         <circle
                           cx="18"
                           cy="18"
                           r="15.915"
                           fill="none"
-                          stroke="#3B82F6"
+                          stroke="#A855F7"
                           strokeWidth="4.2"
-                          strokeDasharray={`${pGestao} 100`}
-                          strokeDashoffset={-(pTransbordo + pAutomacao)}
+                          strokeDasharray={`${pAtendimento} 100`}
+                          strokeDashoffset={-(pEnterprise + pAutomacao)}
                           className="transition-all duration-500 ease-out"
                         />
                       )}
                       
-                      {pTriagem > 0 && (
+                      {pControle > 0 && (
                         <circle
                           cx="18"
                           cy="18"
                           r="15.915"
                           fill="none"
-                          stroke="#64748B"
+                          stroke="#0052CC"
                           strokeWidth="4.2"
-                          strokeDasharray={`${pTriagem} 100`}
-                          strokeDashoffset={-(pTransbordo + pAutomacao + pGestao)}
+                          strokeDasharray={`${pControle} 100`}
+                          strokeDashoffset={-(pEnterprise + pAutomacao + pAtendimento)}
                           className="transition-all duration-500 ease-out"
                         />
                       )}
                     </>
                   )}
+                  
+                  <defs>
+                    <linearGradient id="gradAutomacao" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#0EA5E9" />
+                      <stop offset="100%" stopColor="#0052CC" />
+                    </linearGradient>
+                    <linearGradient id="gradEnterprise" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#0F172A" />
+                      <stop offset="100%" stopColor="#0EA5E9" />
+                    </linearGradient>
+                  </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-3xl font-black text-slate-900">{metrics.totalLeads}</span>
@@ -337,34 +342,34 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               <div className="flex-1 w-full space-y-3">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-50 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#EAB308]"></span>
-                    <span className="uppercase tracking-wider">COMERCIAL URGENTE</span>
-                  </div>
-                  <span>{countTransbordo} ({pctTransbordo}%)</span>
-                </div>
-                
-                <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-50 pb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#10B981]"></span>
-                    <span className="uppercase tracking-wider">AUTOMAÇÃO E-COMMERCE</span>
+                    <span className="w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-[#00E5FF] to-[#0052CC]"></span>
+                    <span className="uppercase tracking-wider">ESTAÇÃO AUTOMAÇÃO</span>
                   </div>
                   <span>{countAutomacao} ({pctAutomacao}%)</span>
                 </div>
                 
-                <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-55 pb-1">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-50 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#3B82F6]"></span>
-                    <span className="uppercase tracking-wider">GESTÃO WHATSAPP</span>
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#A855F7]"></span>
+                    <span className="uppercase tracking-wider">ESTAÇÃO ATENDIMENTO</span>
                   </div>
-                  <span>{countGestao} ({pctGestao}%)</span>
+                  <span>{countAtendimento} ({pctAtendimento}%)</span>
+                </div>
+                
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-50 pb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3.5 h-3.5 rounded-full bg-[#0052CC]"></span>
+                    <span className="uppercase tracking-wider">ESTAÇÃO CONTROLE</span>
+                  </div>
+                  <span>{countControle} ({pctControle}%)</span>
                 </div>
                 
                 <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-55 pb-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-3.5 h-3.5 rounded-full bg-[#64748B]"></span>
-                    <span className="uppercase tracking-wider">TRIAGEM PADRÃO</span>
+                    <span className="w-3.5 h-3.5 rounded-full bg-gradient-to-tr from-[#0F172A] to-[#00E5FF]"></span>
+                    <span className="uppercase tracking-wider">ESTAÇÃO ENTERPRISE</span>
                   </div>
-                  <span>{countTriagem} ({pctTriagem}%)</span>
+                  <span>{countEnterprise} ({pctEnterprise}%)</span>
                 </div>
               </div>
             </div>
@@ -406,8 +411,10 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             <button 
               onClick={handleExportCSV}
               disabled={metrics.totalLeads === 0}
-              className={`text-xs font-bold uppercase tracking-wider border px-3 py-1.5 rounded transition-all bg-white border-[#0052CC]/30 text-[#0052CC] hover:bg-blue-50 cursor-pointer ${
-                metrics.totalLeads === 0 ? "opacity-50 cursor-not-allowed border-slate-200 text-slate-400 bg-slate-50" : ""
+              className={`text-xs font-bold uppercase tracking-wider border px-3 py-1.5 rounded transition-all ${
+                metrics.totalLeads === 0
+                  ? "border-slate-200 text-slate-405 cursor-not-allowed"
+                  : "border-[#0052CC]/30 text-[#0052CC] hover:bg-blue-50 cursor-pointer bg-white"
               }`}
             >
               Baixar Cópia CSV Local
@@ -428,24 +435,22 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               <tbody className="text-sm">
                 {recentLeads.map((lead) => (
                   <tr key={lead.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                    <td className="p-4 font-semibold text-slate-900">{lead.dados.nome}</td>
-                    <td className="p-4 text-slate-500">{lead.dados.empresa || '-'}</td>
-                    <td className="p-4 text-slate-500">{lead.dados.telefone || '-'}</td>
+                    <td className="p-4 font-semibold text-slate-900">{lead.nome}</td>
+                    <td className="p-4 text-slate-555">{lead.empresa || '-'}</td>
+                    <td className="p-4 text-slate-555">{lead.contato || '-'}</td>
                     <td className="p-4">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        lead.diagnostico?.destino === 'TRANSBORDO_COMERCIAL_URGENTE' ? 'bg-yellow-100 text-yellow-800' :
-                        lead.diagnostico?.destino === 'TRILHA_AUTOMACAO_ECOMMERCE' ? 'bg-emerald-100 text-emerald-800' :
-                        lead.diagnostico?.destino === 'TRILHA_GESTAO_WHATSAPP' ? 'bg-blue-100 text-blue-800' :
-                        'bg-slate-100 text-slate-800'
+                        lead.perfil_bifurcado === 'Enterprise' ? 'bg-cyan-100 text-cyan-800' :
+                        lead.perfil_bifurcado === 'Automacao' ? 'bg-emerald-100 text-emerald-800' :
+                        lead.perfil_bifurcado === 'Atendimento' ? 'bg-purple-100 text-purple-800' :
+                        'bg-blue-100 text-blue-800'
                       }`}>
-                        {lead.diagnostico?.destino === 'TRANSBORDO_COMERCIAL_URGENTE' ? 'URGENTE' : 
-                         lead.diagnostico?.destino === 'TRILHA_AUTOMACAO_ECOMMERCE' ? 'AUTOMAÇÃO' : 
-                         lead.diagnostico?.destino === 'TRILHA_GESTAO_WHATSAPP' ? 'WHATSAPP' : 'PADRÃO'}
+                        {lead.perfil_bifurcado === 'Automacao' ? 'Automação' : lead.perfil_bifurcado}
                       </span>
                     </td>
                     <td className="p-4">
-                      {lead.sincronizado ? (
-                        <span className="text-[#00DA70] font-bold text-xs">● Sincronizado</span>
+                      {lead.sincronizado === 1 ? (
+                        <span className="text-emerald-600 font-bold text-xs">● Sincronizado</span>
                       ) : (
                         <span className="text-amber-500 font-bold text-xs">○ Pendente</span>
                       )}
@@ -455,7 +460,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 {recentLeads.length === 0 && (
                   <tr>
                     <td colSpan={5} className="p-8 text-center text-slate-500 font-mono">
-                      [Nenhum participante em cache no LocalStorage]
+                      [Nenhum participante em cache no IndexedDB]
                     </td>
                   </tr>
                 )}
@@ -469,7 +474,7 @@ export const AdminPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         <div className="max-w-6xl mx-auto">
           <button 
             onClick={onClose}
-            className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-gradient-to-r from-[#00E5FF] to-[#0052CC] hover:from-[#00D0E6] hover:to-[#0047B3] text-white shadow-[0_8px_25px_rgba(0,82,204,0.25)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer block text-center"
+            className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-gradient-to-r from-[#0EA5E9] to-[#0052CC] hover:from-[#0284C7] hover:to-[#0047B3] text-white shadow-[0_8px_25px_rgba(0,82,204,0.25)] hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 cursor-pointer block text-center"
           >
             Voltar ao Fluxo Principal (Totem)
           </button>
