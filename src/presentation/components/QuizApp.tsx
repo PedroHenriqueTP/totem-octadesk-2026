@@ -338,7 +338,7 @@ export default function QuizApp() {
   const currentQuestion = quizJourneyConfig.questions[currentQuestionIndex];
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 relative overflow-hidden bg-white">
+    <main className="min-h-screen w-full flex flex-col justify-between items-center py-8 px-4 md:px-8 bg-[#FFFFFF]">
       
       <header className="w-full max-w-5xl flex justify-between items-center z-10 mb-8 px-4">
         <div className="flex items-center gap-3">
@@ -367,8 +367,8 @@ export default function QuizApp() {
         </span>
       </header>
 
-      {/* Contêiner Principal Otimizado para Tablet (max-w-5xl com p-10) */}
-      <div className="w-full max-w-5xl shadow-2xl p-10 rounded-3xl z-10 relative overflow-hidden transition-all duration-350 bg-white border border-zinc-200/80 text-[#2C3647] backdrop-blur-xl">
+      {/* Contêiner Principal Otimizado para Tablet & Desktop (w-full max-w-5xl com flex-col justify-between) */}
+      <div className="w-full max-w-5xl bg-white border border-slate-100 rounded-3xl p-8 md:p-12 shadow-sm flex flex-col justify-between z-10 relative overflow-hidden transition-all duration-350 text-[#2C3647] backdrop-blur-xl">
         
         {/* Renderiza o mascote no topo nas etapas de 1 a 3 */}
         {step < 4 && (

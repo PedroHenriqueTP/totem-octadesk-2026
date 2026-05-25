@@ -28,8 +28,8 @@
   --color-panel-border: var(--panel-border);
 }
 
-body {
-  background: linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 50%, #E2E8F0 100%);
+body, html {
+  background: #FFFFFF;
   color: #2C3647; /* Cor principal oficial */
   font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow-x: hidden;
@@ -122,9 +122,8 @@ input, button, select, textarea, [role="button"], .card-solucao, .octo-container
   touch-action: manipulation;
 }
 
-/* Hide scrollbars during the main quiz journey to prevent viewport bounce on touch */
+/* Enable vertical scroll only if viewport is too small, prevent overflow bounce on touch */
 body:not(.admin-panel-root) {
-  overflow: hidden;
-  height: 100vh;
-  width: 100vw;
+  overflow-y: auto;
+  min-height: 100vh;
 }

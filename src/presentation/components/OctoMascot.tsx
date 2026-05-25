@@ -21,6 +21,7 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
         
         .octo-label {
           margin-top: 14px;
+          margin-bottom: 24px;
           font-family: 'Urbanist', 'Inter', sans-serif;
           font-weight: 800; /* font-extrabold */
           font-size: 1.15rem;
