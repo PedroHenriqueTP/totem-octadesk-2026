@@ -22,13 +22,13 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
         .octo-label {
           margin-top: 14px;
           margin-bottom: 24px;
-          font-family: 'Urbanist', 'Inter', sans-serif;
+          font-family: 'Inter', sans-serif;
           font-weight: 800; /* font-extrabold */
-          font-size: 1.15rem;
-          color: #2C3647;
-          letter-spacing: 0.15em;
+          font-size: 1.35rem;
+          color: #001B3D;
+          letter-spacing: -0.03em;
           text-align: center;
-          text-transform: uppercase;
+          text-transform: lowercase;
         }
 
         .octo-svg {
@@ -42,17 +42,17 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
         /* Efeitos de estado e ativação de brilho de fundo sutil e corporativo */
         .glow-backdrop {
           transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-          fill: #4A5A70;
+          fill: #00D1A0;
           opacity: 0;
         }
 
         .octo-svg.thinking .glow-backdrop {
-          opacity: 0.12;
+          opacity: 0.15;
           animation: glow-pulse 2s ease-in-out infinite alternate;
         }
 
         .octo-svg.success .glow-backdrop {
-          opacity: 0.22;
+          opacity: 0.3;
           animation: success-glow 1.5s ease-in-out infinite alternate;
         }
 
@@ -74,22 +74,22 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
         @keyframes glow-pulse {
           0% {
             r: 80px;
-            opacity: 0.08;
+            opacity: 0.1;
           }
           100% {
             r: 100px;
-            opacity: 0.2;
+            opacity: 0.25;
           }
         }
 
         @keyframes success-glow {
           0% {
             r: 90px;
-            opacity: 0.15;
+            opacity: 0.2;
           }
           100% {
             r: 115px;
-            opacity: 0.35;
+            opacity: 0.45;
           }
         }
 
@@ -107,11 +107,16 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          {/* Brilho radial de fundo sutil */}
-          <radialGradient id="slateBackdropGrad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#4A5A70" stopOpacity="1" />
-            <stop offset="100%" stopColor="#4A5A70" stopOpacity="0" />
+          {/* Brilho radial de fundo verde-ciano */}
+          <radialGradient id="octaBackdropGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#00E5FF" stopOpacity="1" />
+            <stop offset="100%" stopColor="#00D1A0" stopOpacity="0" />
           </radialGradient>
+          {/* Degradê oficial da marca */}
+          <linearGradient id="octaBrandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#00D1A0" />
+            <stop offset="100%" stopColor="#00E5FF" />
+          </linearGradient>
         </defs>
 
         {/* Círculo de ativação de fundo sutil */}
@@ -120,74 +125,43 @@ export const OctoMascot: React.FC<OctoMascotProps> = ({ estadoAnimação = 'floa
           cx="120" 
           cy="120" 
           r="95" 
-          fill="url(#slateBackdropGrad)"
+          fill="url(#octaBackdropGrad)"
         />
 
-        {/* Squircle Oficial da Marca (#2C3647) */}
+        {/* Squircle Oficial da Marca (#001B3D) */}
         <rect 
           x="30" 
           y="30" 
           width="180" 
           height="180" 
           rx="44" 
-          fill="#2C3647" 
-          stroke="rgba(255, 255, 255, 0.03)"
+          fill="#001B3D" 
+          stroke="rgba(0, 229, 255, 0.08)"
           strokeWidth="1"
         />
 
-        {/* Corpo do Polvo Minimalista Branco (#FFFFFF) - Peça Única Plana */}
+        {/* Isotipo do Balão de Conversa com Degradê */}
         <path 
-          d="M 120,70 
-             C 145,70 162,88 162,112 
-             C 162,126 156,132 150,136 
-             C 155,140 168,142 178,146 
-             C 192,152 194,164 186,172 
-             C 178,180 166,176 158,164 
-             C 152,156 145,148 142,140 
-             C 140,150 142,166 138,180 
-             C 134,194 124,194 122,180 
-             C 120,166 120,152 120,144 
-             C 120,152 120,166 118,180 
-             C 116,194 106,194 102,180 
-             C 98,166 100,150 98,140 
-             C 95,148 88,156 82,164 
-             C 74,176 62,180 54,172 
-             C 46,164 48,152 62,146 
-             C 72,142 85,140 90,136 
-             C 84,132 78,126 78,112 
-             C 78,88 95,70 120,70 Z" 
-          fill="#FFFFFF" 
+          d="M 120,65 C 147.6,65 170,87.4 170,115 C 170,142.6 147.6,165 120,165 C 111,165 102.5,162.7 95,158.5 L 75,168 L 81,148 C 71,139.5 65,128 65,115 C 65,87.4 87.4,65 120,65 Z" 
+          fill="url(#octaBrandGrad)" 
         />
 
-        {/* Headset de Atendimento Integrado (Flat e Elegante #4A5A70) */}
-        {/* Haste do Headset (Fina, contornando o topo da cabeça de forma externa) */}
-        <path 
-          d="M 72 96 C 72 58, 168 58, 168 96" 
-          stroke="#4A5A70" 
-          strokeWidth="3.5" 
-          fill="none" 
-          strokeLinecap="round"
-        />
-        
-        {/* Conchas Laterais Discretas (Earcups) */}
-        <rect x="66" y="86" width="7" height="18" rx="2" fill="#4A5A70" />
-        <rect x="167" y="86" width="7" height="18" rx="2" fill="#4A5A70" />
+        {/* Olhos Amigáveis */}
+        <circle cx="103" cy="110" r="4.5" fill="#001B3D" />
+        <circle cx="137" cy="110" r="4.5" fill="#001B3D" />
 
-        {/* Haste do Microfone Fina e Elegante em #2C3647 (dentro da cabeça do polvo) */}
+        {/* Sorriso Simpático */}
         <path 
-          d="M 72 102 Q 80 124, 96 120" 
-          stroke="#2C3647" 
-          strokeWidth="2" 
+          d="M 108 126 Q 120 135, 132 126" 
+          stroke="#001B3D" 
+          strokeWidth="3" 
           fill="none" 
           strokeLinecap="round" 
         />
-        <circle cx="96" cy="120" r="3" fill="#2C3647" />
-
-        {/* Olhos - Elipses verticais simétricas oficiais (#2C3647) */}
-        <ellipse cx="106" cy="112" rx="5" ry="7.5" fill="#2C3647" />
-        <ellipse cx="134" cy="112" rx="5" ry="7.5" fill="#2C3647" />
       </svg>
-      <div className="octo-label">OCTADESK</div>
+      <div className="octo-label">
+        octadesk <span style={{ fontWeight: 350, color: '#00D1A0' }}>deepdive</span>
+      </div>
     </div>
   );
 };

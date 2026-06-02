@@ -63,6 +63,8 @@ export default function QuizApp() {
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string | string[]>>({});
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
 
+  const [prejuizoOperacional, setPrejuizoOperacional] = useState<number>(0);
+
   // Estados do Polvo e Resultado
   const { state: polvoState, setState: setPolvoState, resetState: resetPolvoState } = usePolvo();
   const [computedResult, setComputedResult] = useState<{
@@ -76,6 +78,7 @@ export default function QuizApp() {
     };
     toolScores: ToolScores;
     prioridadeFerramenta: 'faq' | 'sales' | 'info' | 'cart';
+    prejuizoOperacional: number;
   } | null>(null);
 
   // Efeito de animação de progresso do loading (Step 4)
@@ -176,7 +179,7 @@ export default function QuizApp() {
     const isPotential = funcionariosValidos && volumeValido && automacaoValida;
 
     // Payload final enviado de forma limpa para o db.leads (Dexie/IndexedDB)
-    const novoLead: Lead = {
+    const novoLead: Lead & { prejuizo_operacional?: number } = {
       nome: formData.nome,
       empresa: formData.empresa,
       email: formData.email,
@@ -193,7 +196,8 @@ export default function QuizApp() {
       toolScores: finalScores,
       prioridade_ferramenta: prioridade,
       tempo_jornada_segundos: tempoJornadaSegundos,
-      isPotentialLead: isPotential
+      isPotentialLead: isPotential,
+      prejuizo_operacional: prejuizoOperacional
     };
 
     try {
@@ -229,7 +233,8 @@ export default function QuizApp() {
       toolScores: finalScores,
       prioridadeFerramenta: prioridade,
       tempoJornadaSegundos: tempoJornadaSegundos,
-      isPotentialLead: isPotential
+      isPotentialLead: isPotential,
+      prejuizoOperacional: prejuizoOperacional
     }, diagnosticoResultado);
 
     setComputedResult({
@@ -237,19 +242,21 @@ export default function QuizApp() {
       score,
       diagnostico: diagnosticoResultado,
       toolScores: finalScores,
-      prioridadeFerramenta: prioridade
+      prioridadeFerramenta: prioridade,
+      prejuizoOperacional
     });
 
     setProgress(0); // Reseta progresso antes de entrar no efeito de contagem
     setStep(4); // Transiciona para o loading
-  }, [formData, score, quizToolScores, startTime, quizAnswers, setPolvoState]);
+  }, [formData, score, quizToolScores, startTime, quizAnswers, setPolvoState, prejuizoOperacional]);
 
   // Processa a seleção de opções no quiz com feedback visual reativo
   const handleSelectQuizOption = useCallback((option: { 
     text: string; 
     isCorrect: boolean; 
     feedback: string;
-    scores?: { faq?: number; sales?: number; info?: number; cart?: number }
+    scores?: { faq?: number; sales?: number; info?: number; cart?: number };
+    prejuizo?: number;
   }) => {
     if (selectedOptionText !== null && option.text !== selectedOptionText) {
       const currentQuestion = quizJourneyConfig.questions[currentQuestionIndex];
@@ -261,6 +268,12 @@ export default function QuizApp() {
     if (!hasClickedCurrentQuestion) {
       setHasClickedCurrentQuestion(true);
       setQuizAnswers((prev) => ({ ...prev, [currentQuestion.id]: option.text }));
+      
+      // Acumula Prejuízo Operacional
+      if (option.prejuizo !== undefined) {
+        setPrejuizoOperacional((prev) => prev + option.prejuizo!);
+      }
+
       setQuizToolScores((prev) => {
         const next = { ...prev };
         if (option.scores) {
@@ -311,6 +324,7 @@ export default function QuizApp() {
     });
     setCurrentQuestionIndex(0);
     setScore(0);
+    setPrejuizoOperacional(0);
     setHasErroredOnCurrentQuestion(false);
     setSelectedOptionText(null);
     setComputedResult(null);
@@ -345,30 +359,32 @@ export default function QuizApp() {
           {/* Isotipo Squircle Oficial */}
           {/* Mascote DeepDive Oficial com Headset (image_0.png) */}
           <svg className="w-9 h-9 flex-shrink-0" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="30" y="30" width="180" height="180" rx="44" fill="#2C3647" />
+            <defs>
+              <linearGradient id="octaBrandGradHeader" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#00D1A0" />
+                <stop offset="100%" stopColor="#00E5FF" />
+              </linearGradient>
+            </defs>
+            <rect x="30" y="30" width="180" height="180" rx="44" fill="#001B3D" stroke="rgba(0, 229, 255, 0.08)" strokeWidth="1" />
             <path 
-              d="M 120,70 C 145,70 162,88 162,112 C 162,126 156,132 150,136 C 155,140 168,142 178,146 C 192,152 194,164 186,172 C 178,180 166,176 158,164 C 152,156 145,148 142,140 C 140,150 142,166 138,180 C 134,194 124,194 122,180 C 120,166 120,152 120,144 C 120,152 120,166 118,180 C 116,194 106,194 102,180 C 98,166 100,150 98,140 C 95,148 88,156 82,164 C 74,176 62,180 54,172 C 46,164 48,152 62,146 C 72,142 85,140 90,136 C 84,132 78,126 78,112 C 78,88 95,70 120,70 Z" 
-              fill="#FFFFFF" 
+              d="M 120,65 C 147.6,65 170,87.4 170,115 C 170,142.6 147.6,165 120,165 C 111,165 102.5,162.7 95,158.5 L 75,168 L 81,148 C 71,139.5 65,128 65,115 C 65,87.4 87.4,65 120,65 Z" 
+              fill="url(#octaBrandGradHeader)" 
             />
-            <path d="M 72 96 C 72 58, 168 58, 168 96" stroke="#4A5A70" strokeWidth="3.5" fill="none" strokeLinecap="round" />
-            <rect x="66" y="86" width="7" height="18" rx="2" fill="#4A5A70" />
-            <rect x="167" y="86" width="7" height="18" rx="2" fill="#4A5A70" />
-            <path d="M 72 102 Q 80 124, 96 120" stroke="#2C3647" strokeWidth="2" fill="none" strokeLinecap="round" />
-            <circle cx="96" cy="120" r="3" fill="#2C3647" />
-            <ellipse cx="106" cy="112" rx="5" ry="7.5" fill="#2C3647" />
-            <ellipse cx="134" cy="112" rx="5" ry="7.5" fill="#2C3647" />
+            <circle cx="103" cy="110" r="4.5" fill="#001B3D" />
+            <circle cx="137" cy="110" r="4.5" fill="#001B3D" />
+            <path d="M 108 126 Q 120 135, 132 126" stroke="#001B3D" strokeWidth="3" fill="none" strokeLinecap="round" />
           </svg>
-          <span className="font-extrabold tracking-tight text-xl lowercase text-[#2C3647]">
-            octadesk <span className="font-light">deepdive</span>
+          <span className="font-extrabold tracking-tight text-xl lowercase text-[#001B3D]">
+            octadesk <span className="font-light text-[#00D1A0]">deepdive</span>
           </span>
         </div>
-        <span className="text-xs font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-full border backdrop-blur-sm text-[#2C3647] border-zinc-300 bg-white/90 shadow-sm">
+        <span className="text-xs font-bold uppercase tracking-[0.2em] px-4 py-2 rounded-full border backdrop-blur-sm text-[#001B3D] border-zinc-300 bg-white/90 shadow-sm">
           Fórum E-commerce Brasil 2026
         </span>
       </header>
 
       {/* Contêiner Principal Otimizado para Tablet & Desktop (w-full max-w-5xl com flex-col justify-between) */}
-      <div className="w-full max-w-5xl bg-white border border-slate-100 rounded-3xl p-8 md:p-12 shadow-sm flex flex-col justify-between z-10 relative overflow-hidden transition-all duration-350 text-[#2C3647] backdrop-blur-xl">
+      <div className="w-full max-w-5xl bg-white border border-slate-100 rounded-3xl p-8 md:p-12 shadow-sm flex flex-col justify-between z-10 relative overflow-hidden transition-all duration-350 text-[#001B3D] backdrop-blur-xl">
         
         {/* Renderiza o mascote no topo nas etapas de 1 a 3 */}
         {step < 4 && (
@@ -388,10 +404,10 @@ export default function QuizApp() {
               className="text-center space-y-8 py-8 flex flex-col items-center"
             >
               <div className="space-y-4">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#2C3647] font-black block">
+                <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#001B3D] font-black block">
                   Diagnóstico Operacional Executivo
                 </span>
-                <h1 className="text-4xl font-black text-[#2C3647] leading-tight max-w-2xl mx-auto">
+                <h1 className="text-4xl font-black text-[#001B3D] leading-tight max-w-2xl mx-auto">
                   Sua Operação está no topo ou perdendo dinheiro?
                 </h1>
                 <p className="text-slate-500 text-base max-w-lg mx-auto leading-relaxed">
@@ -402,7 +418,7 @@ export default function QuizApp() {
               <div className="w-full max-w-md pt-4">
                 <button
                   onClick={() => { setStep(1); setStartTime(Date.now()); }}
-                  className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-[#2C3647] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-lg transition-all duration-150 cursor-pointer block text-center"
+                  className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-[#001B3D] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-lg transition-all duration-150 cursor-pointer block text-center"
                 >
                   Iniciar DeepDive
                 </button>
@@ -423,7 +439,7 @@ export default function QuizApp() {
                 <span className="text-xs font-mono uppercase tracking-[0.2em] text-slate-500 font-extrabold">
                   Etapa 1: Acolhimento
                 </span>
-                <h1 className="text-3xl font-black text-[#2C3647] leading-tight">
+                <h1 className="text-3xl font-black text-[#001B3D] leading-tight">
                   Bem-vindo ao DeepDive. Como podemos te chamar?
                 </h1>
               </div>
@@ -435,7 +451,7 @@ export default function QuizApp() {
                     <input
                       type="text"
                       placeholder="Ex: Pedro Silva"
-                      className="w-full p-5 rounded-2xl bg-slate-50 border border-zinc-200 text-zinc-950 placeholder-zinc-400 text-base focus:outline-none focus:ring-2 focus:ring-[#2C3647]/20 focus:border-[#2C3647] transition-all"
+                      className="w-full p-5 rounded-2xl bg-slate-50 border border-zinc-200 text-zinc-950 placeholder-zinc-400 text-base focus:outline-none focus:ring-2 focus:ring-[#001B3D]/20 focus:border-[#001B3D] transition-all"
                       value={formData.nome}
                       onChange={(e) => handleInputChange("nome", e.target.value)}
                     />
@@ -446,7 +462,7 @@ export default function QuizApp() {
                     <input
                       type="text"
                       placeholder="Ex: (11) 99999-9999"
-                      className="w-full p-5 rounded-2xl bg-slate-50 border border-zinc-200 text-zinc-950 placeholder-zinc-400 text-base focus:outline-none focus:ring-2 focus:ring-[#2C3647]/20 focus:border-[#2C3647] transition-all"
+                      className="w-full p-5 rounded-2xl bg-slate-50 border border-zinc-200 text-zinc-950 placeholder-zinc-400 text-base focus:outline-none focus:ring-2 focus:ring-[#001B3D]/20 focus:border-[#001B3D] transition-all"
                       value={formData.telefone}
                       onChange={(e) => handleInputChange("telefone", e.target.value)}
                     />
@@ -458,7 +474,7 @@ export default function QuizApp() {
                   <input
                     type="email"
                     placeholder="Ex: pedro@empresa.com"
-                    className="w-full p-5 rounded-2xl bg-slate-50 border border-zinc-200 text-zinc-950 placeholder-zinc-400 text-base focus:outline-none focus:ring-2 focus:ring-[#2C3647]/20 focus:border-[#2C3647] transition-all"
+                    className="w-full p-5 rounded-2xl bg-slate-50 border border-zinc-200 text-zinc-950 placeholder-zinc-400 text-base focus:outline-none focus:ring-2 focus:ring-[#001B3D]/20 focus:border-[#001B3D] transition-all"
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                   />
@@ -470,7 +486,7 @@ export default function QuizApp() {
                     <input
                       type="text"
                       placeholder="Ex: Tech Co."
-                      className="w-full p-5 rounded-2xl bg-slate-50 border border-zinc-200 text-zinc-950 placeholder-zinc-400 text-base focus:outline-none focus:ring-2 focus:ring-[#2C3647]/20 focus:border-[#2C3647] transition-all"
+                      className="w-full p-5 rounded-2xl bg-slate-50 border border-zinc-200 text-zinc-950 placeholder-zinc-400 text-base focus:outline-none focus:ring-2 focus:ring-[#001B3D]/20 focus:border-[#001B3D] transition-all"
                       value={formData.empresa}
                       onChange={(e) => handleInputChange("empresa", e.target.value)}
                     />
@@ -481,7 +497,7 @@ export default function QuizApp() {
                     <input
                       type="text"
                       placeholder="Ex: Diretor de Operações"
-                      className="w-full p-5 rounded-2xl bg-slate-50 border border-zinc-200 text-zinc-950 placeholder-zinc-400 text-base focus:outline-none focus:ring-2 focus:ring-[#2C3647]/20 focus:border-[#2C3647] transition-all"
+                      className="w-full p-5 rounded-2xl bg-slate-50 border border-zinc-200 text-zinc-950 placeholder-zinc-400 text-base focus:outline-none focus:ring-2 focus:ring-[#001B3D]/20 focus:border-[#001B3D] transition-all"
                       value={formData.cargo}
                       onChange={(e) => handleInputChange("cargo", e.target.value)}
                     />
@@ -495,7 +511,7 @@ export default function QuizApp() {
                   disabled={!isStep1Valid}
                   className={`w-full py-5 rounded-2xl font-bold transition-all text-lg flex items-center justify-center gap-2 ${
                     isStep1Valid
-                      ? "bg-[#2C3647] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-md cursor-pointer"
+                      ? "bg-[#001B3D] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-md cursor-pointer"
                       : "bg-zinc-100 text-zinc-400 cursor-not-allowed border border-zinc-200"
                   }`}
                 >
@@ -521,7 +537,7 @@ export default function QuizApp() {
                 <span className="text-xs font-mono uppercase tracking-[0.2em] text-slate-500 font-extrabold">
                   Etapa 2: Diagnóstico
                 </span>
-                <h2 className="text-3xl font-black text-[#2C3647] leading-tight">
+                <h2 className="text-3xl font-black text-[#001B3D] leading-tight">
                   Como está estruturada a sua operação hoje?
                 </h2>
               </div>
@@ -542,7 +558,7 @@ export default function QuizApp() {
                           onClick={() => handleDiagChange('equipe', opt)}
                           className={`p-4 rounded-xl border text-center text-sm font-semibold transition-all cursor-pointer ${
                             isSelected 
-                              ? "bg-slate-100 border-[#2C3647] text-[#2C3647] font-bold shadow-md"
+                              ? "bg-slate-100 border-[#001B3D] text-[#001B3D] font-bold shadow-md"
                               : "bg-white border-zinc-200 text-zinc-700 hover:bg-slate-50"
                           }`}
                         >
@@ -568,7 +584,7 @@ export default function QuizApp() {
                           onClick={() => handleDiagChange('volume', opt)}
                           className={`p-4 rounded-xl border text-center text-sm font-semibold transition-all cursor-pointer ${
                             isSelected 
-                              ? "bg-slate-100 border-[#2C3647] text-[#2C3647] font-bold shadow-md"
+                              ? "bg-slate-100 border-[#001B3D] text-[#001B3D] font-bold shadow-md"
                               : "bg-white border-zinc-200 text-zinc-700 hover:bg-slate-50"
                           }`}
                         >
@@ -594,7 +610,7 @@ export default function QuizApp() {
                           onClick={() => toggleCanal(opt)}
                           className={`px-5 py-3 rounded-full border text-sm font-semibold transition-all cursor-pointer flex items-center gap-2 ${
                             isSelected 
-                              ? "bg-slate-100 border-[#2C3647] text-[#2C3647] font-bold shadow-md"
+                              ? "bg-slate-100 border-[#001B3D] text-[#001B3D] font-bold shadow-md"
                               : "bg-white border-zinc-200 text-zinc-700 hover:bg-slate-50"
                           }`}
                         >
@@ -624,7 +640,7 @@ export default function QuizApp() {
                   disabled={!isStep2Valid}
                   className={`px-10 py-4 rounded-2xl font-bold transition-all text-base flex items-center justify-center gap-2 ${
                     isStep2Valid
-                      ? "bg-[#2C3647] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-md cursor-pointer"
+                      ? "bg-[#001B3D] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-md cursor-pointer"
                       : "bg-zinc-100 text-zinc-400 cursor-not-allowed border border-zinc-200"
                   }`}
                 >
@@ -639,7 +655,7 @@ export default function QuizApp() {
 
           {step === 3 && currentQuestion && (
             <motion.div
-              key="quiz"
+              key={`quiz-question-${currentQuestionIndex}`}
               variants={slideVariants}
               initial="initial"
               animate="animate"
@@ -672,17 +688,17 @@ export default function QuizApp() {
 
               {currentQuestionIndex === 0 && (
                 <div className="pb-4 mb-4 border-b border-zinc-200">
-                  <h3 className="text-center font-bold text-[#2C3647] tracking-wider text-sm">
+                  <h3 className="text-center font-bold text-[#001B3D] tracking-wider text-sm">
                     &quot;Vamos avaliar as suas dores e mapear a inteligência do seu negócio.&quot;
                   </h3>
                 </div>
               )}
 
               <div className="space-y-2 relative z-10">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#2C3647] font-bold block">
+                <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#001B3D] font-bold block">
                   Desafio {currentQuestionIndex + 1} de {quizJourneyConfig.questions.length}
                 </span>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-[#2C3647] leading-snug">
+                <h2 className="text-3xl md:text-4xl font-extrabold text-[#001B3D] leading-snug">
                   {currentQuestion.question}
                 </h2>
               </div>
@@ -705,7 +721,7 @@ export default function QuizApp() {
                           }}
                           className={`p-5 rounded-2xl border text-center text-lg md:text-xl font-bold transition-all cursor-pointer active:scale-[0.98] active:bg-slate-100 ${
                             isSelected 
-                              ? "bg-slate-100 border-[#2C3647] text-[#2C3647] shadow-md scale-[1.02]"
+                              ? "bg-slate-100 border-[#001B3D] text-[#001B3D] shadow-md scale-[1.02]"
                               : "bg-white border-zinc-200 text-zinc-700"
                           }`}
                         >
@@ -725,7 +741,7 @@ export default function QuizApp() {
                     let pillStyle = "border-zinc-200 bg-white active:bg-slate-100 active:scale-[0.98] text-slate-800 shadow-sm transition-all duration-150";
                     if (isSelected) {
                       if (isCorrect) {
-                        pillStyle = "border-[#2C3647] bg-slate-100 text-[#2C3647] shadow-[0_0_15px_rgba(44,54,71,0.1)]";
+                        pillStyle = "border-[#001B3D] bg-slate-100 text-[#001B3D] shadow-[0_0_15px_rgba(44,54,71,0.1)]";
                       } else {
                         pillStyle = "border-red-400 bg-red-50/50 text-red-700 shadow-sm";
                       }
@@ -741,7 +757,7 @@ export default function QuizApp() {
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-lg md:text-xl pr-4">{option.text}</span>
                             <div className={`w-6 h-6 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${
-                              isSelected && isCorrect ? "bg-[#2C3647] border-transparent text-white" :
+                              isSelected && isCorrect ? "bg-[#001B3D] border-transparent text-white" :
                               isSelected && isIncorrect ? "bg-red-500 border-transparent text-white" :
                               "border-zinc-300 bg-transparent"
                             }`}>
@@ -779,7 +795,7 @@ export default function QuizApp() {
                       setStep(1);
                     }
                   }}
-                  className="px-8 py-4 rounded-2xl border border-zinc-200 text-[#2C3647] font-bold active:scale-[0.98] active:bg-slate-100 transition-all text-base cursor-pointer"
+                  className="px-8 py-4 rounded-2xl border border-zinc-200 text-[#001B3D] font-bold active:scale-[0.98] active:bg-slate-100 transition-all text-base cursor-pointer"
                 >
                   Voltar
                 </button>
@@ -797,25 +813,32 @@ export default function QuizApp() {
                       setQuizAnswers(prev => ({ ...prev, 3: selectedChannels }));
                       
                       // Calcula pontuações de canais
+                      let canalPrejuizo = 0;
                       setQuizToolScores(prev => {
                         const next = { ...prev };
                         selectedChannels.forEach(chan => {
                           const opt = currentQuestion.options.find(o => o.text === chan);
-                          if (opt && opt.scores) {
-                            if (opt.scores.faq) next.faq += opt.scores.faq;
-                            if (opt.scores.sales) next.sales += opt.scores.sales;
-                            if (opt.scores.info) next.info += opt.scores.info;
-                            if (opt.scores.cart) next.cart += opt.scores.cart;
+                          if (opt) {
+                            if (opt.scores) {
+                              if (opt.scores.faq) next.faq += opt.scores.faq;
+                              if (opt.scores.sales) next.sales += opt.scores.sales;
+                              if (opt.scores.info) next.info += opt.scores.info;
+                              if (opt.scores.cart) next.cart += opt.scores.cart;
+                            }
+                            if (opt.prejuizo !== undefined) {
+                              canalPrejuizo += opt.prejuizo;
+                            }
                           }
                         });
                         return next;
                       });
 
+                      setPrejuizoOperacional(prev => prev + canalPrejuizo);
                       setCurrentQuestionIndex((prev) => prev + 1);
                     }}
                     className={`px-8 py-4 rounded-2xl font-black text-base tracking-wide uppercase transition-all flex items-center justify-center gap-2 ${
                       selectedChannels.length > 0
-                        ? "bg-[#2C3647] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-md cursor-pointer"
+                        ? "bg-[#001B3D] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-md cursor-pointer"
                         : "bg-zinc-100 text-zinc-400 cursor-not-allowed border border-zinc-200"
                     }`}
                   >
@@ -839,7 +862,7 @@ export default function QuizApp() {
               className="text-center py-10 space-y-8 flex flex-col items-center justify-center"
             >
               <div className="space-y-3">
-                <h2 className="text-3xl font-black text-[#2C3647] animate-pulse">
+                <h2 className="text-3xl font-black text-[#001B3D] animate-pulse">
                   Mergulhando nos Dados...
                 </h2>
                 <p className="text-base text-slate-400 max-w-sm mx-auto leading-relaxed">
@@ -849,12 +872,12 @@ export default function QuizApp() {
 
               <div className="w-full max-w-md bg-zinc-100 rounded-full h-4 border border-zinc-200 overflow-hidden relative shadow-inner">
                 <motion.div
-                  className="h-full bg-[#2C3647]"
+                  className="h-full bg-[#001B3D]"
                   style={{ width: `${progress}%` }}
                 />
               </div>
 
-              <span className="font-mono text-xs text-[#2C3647] tracking-widest uppercase font-bold">
+              <span className="font-mono text-xs text-[#001B3D] tracking-widest uppercase font-bold">
                 {Math.round(progress)}% DIAGNOSTICADO
               </span>
             </motion.div>
@@ -870,10 +893,10 @@ export default function QuizApp() {
               className="text-center space-y-8 py-2 flex flex-col items-center"
             >
               <div className="space-y-3">
-                <span className="text-xs font-mono uppercase tracking-[0.3em] px-5 py-2 rounded-full border font-bold text-[#2C3647] border-[#2C3647]/30 bg-slate-100">
+                <span className="text-xs font-mono uppercase tracking-[0.3em] px-5 py-2 rounded-full border font-bold text-[#001B3D] border-[#001B3D]/30 bg-slate-100">
                   Diagnóstico Concluído
                 </span>
-                <h2 className="text-3xl md:text-4xl font-black text-[#2C3647] leading-tight">
+                <h2 className="text-3xl md:text-4xl font-black text-[#001B3D] leading-tight">
                   SEU DIAGNÓSTICO DE EFICIÊNCIA OPERACIONAL ESTÁ PRONTO!
                 </h2>
                 <p className="text-slate-500 text-sm max-w-md mx-auto">
@@ -893,14 +916,36 @@ export default function QuizApp() {
                 </div>
                 
                 <div className="space-y-2 text-center">
-                  <span className="text-xs uppercase font-mono tracking-widest text-[#2C3647] font-bold">prioridade identificada</span>
-                  <h3 className="text-2xl font-black text-[#2C3647] tracking-tight">
+                  <span className="text-xs uppercase font-mono tracking-widest text-[#001B3D] font-bold">prioridade identificada</span>
+                  <h3 className="text-2xl font-black text-[#001B3D] tracking-tight">
                     {TOOLS_CONFIG[computedResult.prioridadeFerramenta].name}
                   </h3>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 text-slate-650 text-sm leading-relaxed max-w-lg text-center font-medium">
                   {computedResult.diagnostico.mensagemInterface}
+                </div>
+
+                {/* Bloco de Prejuízo Operacional */}
+                <div className="w-full max-w-lg bg-red-50/75 border border-red-200/50 p-5 rounded-2xl flex items-center justify-between shadow-sm">
+                  <div className="space-y-1 text-left">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-red-500 block">Prejuízo Operacional Estimado</span>
+                    <span className="text-2xl font-black text-red-950">
+                      R$ {((computedResult.prejuizoOperacional || 0) * 1250).toLocaleString('pt-BR')}/mês
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Nível de Vazamento</span>
+                    <span className={`text-xs font-black px-2.5 py-1 rounded-full uppercase ${
+                      computedResult.prejuizoOperacional > 15 
+                        ? "bg-red-200 text-red-700" 
+                        : computedResult.prejuizoOperacional > 8 
+                          ? "bg-amber-100 text-amber-700" 
+                          : "bg-emerald-100 text-emerald-700"
+                    }`}>
+                      {computedResult.prejuizoOperacional > 15 ? 'Crítico (Alto)' : computedResult.prejuizoOperacional > 8 ? 'Médio' : 'Baixo'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Dashboard de Scores do DeepDive */}
@@ -919,7 +964,7 @@ export default function QuizApp() {
                           key={item.key} 
                           className={`flex items-center justify-between text-xs p-3 rounded-xl border ${
                             isWinner 
-                              ? 'bg-slate-100 border-[#2C3647] font-bold text-[#2C3647] shadow-sm' 
+                              ? 'bg-slate-100 border-[#001B3D] font-bold text-[#001B3D] shadow-sm' 
                               : 'bg-white border-slate-100 text-slate-400'
                           }`}
                         >
@@ -930,12 +975,55 @@ export default function QuizApp() {
                     })}
                   </div>
                 </div>
+
+                {/* Bloco Dinâmico: Solução Recomendada de I.A. */}
+                {(computedResult.prioridadeFerramenta === 'sales' || computedResult.prioridadeFerramenta === 'cart') && (
+                  <div className="w-full max-w-lg border-t border-slate-200 pt-6 text-left space-y-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs uppercase font-mono tracking-wider text-emerald-600 font-extrabold flex items-center gap-1">
+                        ⚡ Solução Recomendada de I.A.
+                      </span>
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full uppercase animate-pulse">
+                        Imediato
+                      </span>
+                    </div>
+                    
+                    {computedResult.prioridadeFerramenta === 'sales' ? (
+                      <div className="p-5 rounded-2xl border-2 border-emerald-500/20 bg-emerald-50/30 flex flex-col gap-2 shadow-sm relative overflow-hidden">
+                        <h5 className="font-extrabold text-base text-[#001B3D] flex items-center gap-1.5">
+                          🤖 Agente de I.A. para Vendas Octadesk
+                        </h5>
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                          Qualifica leads automaticamente do WhatsApp e Instagram 24/7. Responde instantaneamente às intenções de compra, aquece o lead e encaminha apenas os leads qualificados (MQLs) diretamente para o funil dos seus vendedores.
+                        </p>
+                        <div className="flex items-center justify-between text-[11px] font-bold text-emerald-800 pt-2 border-t border-emerald-500/10 mt-1">
+                          <span>🚀 Redução de Tempo de Resposta: -95%</span>
+                          <span>📈 Conversão Média: +30%</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-5 rounded-2xl border-2 border-emerald-500/20 bg-emerald-50/30 flex flex-col gap-2 shadow-sm relative overflow-hidden">
+                        <h5 className="font-extrabold text-base text-[#001B3D] flex items-center gap-1.5">
+                          🛒 Recuperador de Carrinho Abandonado via WhatsApp
+                        </h5>
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                          Detecta desistências no checkout em tempo real. Dispara fluxos dinâmicos e conversacionais personalizados com ofertas e cupons via WhatsApp para reengajar e resgatar o cliente no momento crítico da compra.
+                        </p>
+                        <div className="flex items-center justify-between text-[11px] font-bold text-emerald-800 pt-2 border-t border-emerald-500/10 mt-1">
+                          <span>💰 Recuperação Média: 15% a 25%</span>
+                          <span>⏱️ Tempo de Resgate: Tempo Real</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
               </div>
 
               <div className="w-full max-w-md pt-4">
                 <button
                   onClick={handleReset}
-                  className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-[#2C3647] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-lg transition-all duration-150 cursor-pointer block"
+                  className="w-full py-5 text-xl font-black rounded-2xl tracking-wide uppercase bg-[#001B3D] text-white active:scale-[0.98] active:bg-[#3E4C64] shadow-lg transition-all duration-150 cursor-pointer block"
                 >
                   Finalizar DeepDive
                 </button>
@@ -973,7 +1061,8 @@ export default function QuizApp() {
                        brindeQualificado: true
                      },
                      toolScores: dummyScores,
-                     prioridadeFerramenta: 'faq'
+                     prioridadeFerramenta: 'faq',
+                     prejuizoOperacional: 12
                    });
                    setPolvoState('trilha_automacao');
                  }
@@ -981,7 +1070,7 @@ export default function QuizApp() {
                }}
                className={`py-1.5 px-3 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
                  step === item.val
-                   ? "bg-[#2C3647] text-white shadow-sm"
+                   ? "bg-[#001B3D] text-white shadow-sm"
                    : "bg-zinc-100 text-zinc-650 hover:bg-zinc-200 border border-zinc-200"
                }`}
              >
@@ -996,14 +1085,14 @@ export default function QuizApp() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => setIsAdminOpen(true)}
-            className="px-4 py-2 text-xs font-mono border border-transparent rounded-lg transition-colors cursor-pointer uppercase tracking-wider text-slate-400 hover:text-[#2C3647]"
+            className="px-4 py-2 text-xs font-mono border border-transparent rounded-lg transition-colors cursor-pointer uppercase tracking-wider text-slate-400 hover:text-[#001B3D]"
           >
             [ Painel de Controle ]
           </button>
           
           <button
             onClick={() => setIsVersaoMenuOpen(prev => !prev)}
-            className="px-4 py-2 text-xs font-mono border border-transparent rounded-lg transition-colors cursor-pointer uppercase tracking-wider text-slate-400 hover:text-[#2C3647] flex items-center gap-1.5"
+            className="px-4 py-2 text-xs font-mono border border-transparent rounded-lg transition-colors cursor-pointer uppercase tracking-wider text-slate-400 hover:text-[#001B3D] flex items-center gap-1.5"
           >
             ⚙️ <span className="underline decoration-dotted">{jornadaVersao === 'CONSULTIVA' ? 'Modo Consultivo' : jornadaVersao === 'FAST_TRACK' ? 'Modo Fast Track' : 'Modo Arcade'}</span>
           </button>
@@ -1011,7 +1100,7 @@ export default function QuizApp() {
 
         {isVersaoMenuOpen && (
           <div className="p-4 bg-white border border-zinc-200 rounded-2xl shadow-xl flex flex-col gap-2 w-64 backdrop-blur-md relative z-50">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-[#2C3647] mb-1">Selecione o Modo da Jornada</span>
+            <span className="text-[10px] uppercase font-bold tracking-widest text-[#001B3D] mb-1">Selecione o Modo da Jornada</span>
             {(['CONSULTIVA', 'ARCADE_COMPLETO', 'FAST_TRACK'] as const).map((v) => (
               <button
                 key={v}
@@ -1024,7 +1113,7 @@ export default function QuizApp() {
                 }}
                 className={`py-2 px-3 rounded-lg text-left text-xs font-bold transition-all cursor-pointer ${
                   jornadaVersao === v 
-                    ? "bg-[#2C3647]/10 border border-[#2C3647]/30 text-[#2C3647]" 
+                    ? "bg-[#001B3D]/10 border border-[#001B3D]/30 text-[#001B3D]" 
                     : "bg-zinc-50 text-zinc-700 hover:bg-zinc-100 border border-transparent"
                 }`}
               >

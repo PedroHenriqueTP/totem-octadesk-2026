@@ -14,6 +14,7 @@ export interface LeadData {
   prioridadeFerramenta?: string;
   tempoJornadaSegundos?: number;
   isPotentialLead?: boolean;
+  prejuizoOperacional?: number;
 }
 
 export type DestinoLead = 
