@@ -27,7 +27,7 @@ export default function QuizApp() {
     }
     return VERSAO_ATIVA;
   });
-  const [isVersaoMenuOpen, setIsVersaoMenuOpen] = useState(false);
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -1136,41 +1136,6 @@ export default function QuizApp() {
       </div>
 
       <footer className="mt-3 mb-2 pb-2 text-center z-10 flex flex-col items-center gap-2">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsVersaoMenuOpen(prev => !prev)}
-            className="px-3 py-1.5 text-[10px] font-mono border border-transparent rounded-lg transition-colors cursor-pointer uppercase tracking-wider text-slate-400 hover:text-white flex items-center gap-1"
-          >
-            ⚙️ <span className="underline decoration-dotted">{jornadaVersao === 'CONSULTIVA' ? 'Modo Consultivo' : jornadaVersao === 'FAST_TRACK' ? 'Modo Fast Track' : 'Modo Arcade'}</span>
-          </button>
-        </div>
-
-        {isVersaoMenuOpen && (
-          <div className="p-4 bg-[#1F2538] border border-[#2d62ff]/20 rounded-2xl shadow-2xl flex flex-col gap-2 w-64 backdrop-blur-md relative z-50 text-white">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-[#2d62ff] mb-1">Selecione o Modo da Jornada</span>
-            {(['CONSULTIVA', 'ARCADE_COMPLETO', 'FAST_TRACK'] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => {
-                  setJornadaVersao(v);
-                  if (typeof window !== 'undefined') {
-                    localStorage.setItem('@octadesk-hub:jornada-versao', v);
-                  }
-                  setIsVersaoMenuOpen(false);
-                }}
-                className={`py-2 px-3 rounded-lg text-left text-xs font-bold transition-all cursor-pointer ${
-                  jornadaVersao === v 
-                    ? "bg-[#2d62ff]/10 border border-[#2d62ff] text-[#2d62ff]" 
-                    : "bg-[#1F2538] text-zinc-300 hover:bg-[#272F47] border border-transparent"
-                }`}
-              >
-                {v === 'CONSULTIVA' ? '🟢 Modo Consultivo (Vendas)' : 
-                 v === 'ARCADE_COMPLETO' ? '🔵 Modo Arcade (Completo)' : 
-                 '🟠 Modo Fast Track (Volume)'}
-              </button>
-            ))}
-          </div>
-        )}
       </footer>
 
       {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}
