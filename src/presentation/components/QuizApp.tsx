@@ -443,9 +443,18 @@ export default function QuizApp() {
             priority 
           />
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1.5 rounded-full border border-white/10 bg-[#1F2538]/80 text-zinc-300 shadow-sm">
-          Fórum E-commerce Brasil 2026
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1.5 rounded-full border border-white/10 bg-[#1F2538]/80 text-zinc-300 shadow-sm">
+            Fórum E-commerce Brasil 2026
+          </span>
+          <button
+            onClick={() => setIsAdminOpen(true)}
+            className="p-1.5 rounded-lg border border-white/10 bg-[#1F2538]/80 text-zinc-300 hover:text-white hover:bg-[#272F47] transition-all cursor-pointer text-sm shadow-sm flex items-center justify-center w-8 h-8"
+            title="Painel de Controle"
+          >
+            📊
+          </button>
+        </div>
       </header>
 
       <div className="w-full max-w-4xl bg-[#1F2538] border border-[#2d62ff]/30 rounded-3xl pt-2.5 pb-4 px-4 md:pt-3 md:pb-4.5 md:px-5 shadow-xl flex flex-col justify-between z-10 relative overflow-hidden shrink-0 h-fit transition-all duration-350 text-white backdrop-blur-xl">
@@ -1128,13 +1137,6 @@ export default function QuizApp() {
 
       <footer className="mt-3 mb-2 pb-2 text-center z-10 flex flex-col items-center gap-2">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsAdminOpen(true)}
-            className="px-3 py-1.5 text-[10px] font-mono border border-transparent rounded-lg transition-colors cursor-pointer uppercase tracking-wider text-slate-400 hover:text-white"
-          >
-            [ Painel de Controle ]
-          </button>
-          
           <button
             onClick={() => setIsVersaoMenuOpen(prev => !prev)}
             className="px-3 py-1.5 text-[10px] font-mono border border-transparent rounded-lg transition-colors cursor-pointer uppercase tracking-wider text-slate-400 hover:text-white flex items-center gap-1"
