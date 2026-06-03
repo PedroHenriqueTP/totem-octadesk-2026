@@ -1,10 +1,10 @@
 {
-  "name": "Totem de Ativação Octadesk",
+  "name": "Octadesk Totem DeepDive",
   "short_name": "Totem Octadesk",
-  "description": "Interface para totens de ativação focada em tablets e totens verticais.",
+  "description": "Interface para totens de ativação da Octadesk em tablets.",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "landscape",
   "background_color": "#0F172A",
   "theme_color": "#0284C7",
   "icons": [
