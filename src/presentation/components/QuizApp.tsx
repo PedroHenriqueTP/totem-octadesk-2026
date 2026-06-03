@@ -878,28 +878,23 @@ export default function QuizApp() {
                   </div>
                 </div>
 
-                <div className="w-full max-w-lg border-t border-white/5 pt-2.5 text-left space-y-1.5">
-                  <h4 className="text-[10px] uppercase font-mono tracking-wider text-zinc-400 font-bold">Relatório de Relevância por Pilar:</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="w-full max-w-lg border-t border-white/5 pt-2 text-left space-y-1">
+                  <h4 className="text-[9px] uppercase font-mono tracking-wider text-zinc-400 font-bold text-center">Pontuação por Pilar:</h4>
+                  <div className="flex flex-row flex-wrap justify-center gap-x-4 gap-y-1 text-[10px]">
                     {[
-                      { label: "Atendimento Automatizado (FAQ)", val: computedResult.toolScores.faq, key: 'faq' },
-                      { label: "Agente de Automação (Vendas)", val: computedResult.toolScores.sales, key: 'sales' },
-                      { label: "Sistema de Notificação", val: computedResult.toolScores.info, key: 'info' },
-                      { label: "Recuperação de Carrinho", val: computedResult.toolScores.cart, key: 'cart' },
+                      { label: "FAQ", val: computedResult.toolScores.faq, key: 'faq' },
+                      { label: "Vendas", val: computedResult.toolScores.sales, key: 'sales' },
+                      { label: "Notificação", val: computedResult.toolScores.info, key: 'info' },
+                      { label: "Carrinho", val: computedResult.toolScores.cart, key: 'cart' },
                     ].map((item) => {
                       const isWinner = computedResult.prioridadeFerramenta === item.key;
                       return (
-                        <div 
+                        <span 
                           key={item.key} 
-                          className={`flex items-center justify-between text-[10px] py-1 px-2.5 rounded-lg border ${
-                            isWinner 
-                              ? 'bg-[#2d62ff]/10 border-[#2d62ff] font-bold text-[#2d62ff] shadow-sm' 
-                              : 'bg-[#1F2538] border-white/5 text-zinc-400'
-                          }`}
+                          className={`font-semibold ${isWinner ? 'text-[#00D1A0] font-black' : 'text-zinc-400'}`}
                         >
-                          <span className="truncate pr-2">{isWinner ? '★ ' : ''}{item.label}</span>
-                          <span className="font-mono flex-shrink-0">{item.val} pts</span>
-                        </div>
+                          {item.label}: <span className="font-mono">{item.val} pts</span>
+                        </span>
                       );
                     })}
                   </div>
@@ -959,15 +954,14 @@ export default function QuizApp() {
                   </div>
                 )}
 
-              </div>
-
-              <div className="w-full max-w-md pt-1">
-                <button
-                  onClick={handleReset}
-                  className="w-full py-3 text-base font-extrabold rounded-xl tracking-wide uppercase bg-gradient-to-r from-[#00D1A0] to-[#00B58A] text-[#1F2538] hover:from-[#00E5BC] hover:to-[#00D1A0] active:scale-[0.98] shadow-lg shadow-green-900/10 transition-all duration-150 cursor-pointer block"
-                >
-                  Finalizar DeepDive
-                </button>
+                <div className="w-full max-w-lg pt-3">
+                  <button
+                    onClick={handleReset}
+                    className="w-full py-2.5 text-xs font-black rounded-xl tracking-wide uppercase bg-gradient-to-r from-[#00D1A0] to-[#00B58A] text-[#1F2538] hover:from-[#00E5BC] hover:to-[#00D1A0] active:scale-[0.98] shadow-lg shadow-green-900/10 transition-all duration-150 cursor-pointer block text-center"
+                  >
+                    Finalizar Diagnóstico
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
