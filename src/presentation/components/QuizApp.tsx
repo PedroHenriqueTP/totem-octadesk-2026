@@ -816,57 +816,57 @@ export default function QuizApp() {
               initial="initial"
               animate="animate"
               exit="exit"
-              className="text-center space-y-4 py-1 flex flex-col items-center"
+              className="text-center space-y-2 py-0.5 flex flex-col items-center"
             >
-              <div className="space-y-1.5">
-                <span className="text-[10px] font-mono uppercase tracking-[0.3em] px-3.5 py-1.5 rounded-full border font-bold text-[#2d62ff] border-[#2d62ff]/30 bg-[#1F2538]">
+              <div className="space-y-1">
+                <span className="text-[9px] font-mono uppercase tracking-[0.3em] px-2.5 py-1 rounded-full border font-bold text-[#2d62ff] border-[#2d62ff]/30 bg-[#1F2538]">
                   Diagnóstico Concluído
                 </span>
-                <h2 className="text-lg md:text-xl lg:text-2xl font-extrabold text-white leading-tight">
+                <h2 className="text-base md:text-lg font-extrabold text-white leading-tight">
                   SEU DIAGNÓSTICO DE EFICIÊNCIA OPERACIONAL ESTÁ PRONTO!
                 </h2>
-                <p className="text-zinc-300 text-xs max-w-md mx-auto">
+                <p className="text-zinc-300 text-[10px] max-w-md mx-auto">
                   Com base no perfil da sua equipe e nas respostas do quiz, o motor identificou a sua prioridade técnica de automação.
                 </p>
               </div>
 
               <div 
-                className="p-3 md:p-4 rounded-2xl bg-[#1F2538] border border-[#2d62ff]/20 w-full max-w-2xl flex flex-col items-center space-y-2.5 shadow-2xl relative"
+                className="py-2 px-3 md:py-2.5 md:px-4 rounded-2xl bg-[#1F2538] border border-[#2d62ff]/20 w-full max-w-2xl flex flex-col items-center space-y-2 shadow-2xl relative"
                 style={{ 
                   boxShadow: '0 10px 40px rgba(45, 98, 255, 0.05)'
                 }}
               >
-                <div className="scale-100 mb-1">
+                <div className="scale-100">
                   <Image 
                     src="/assets/octadesk-octopus-white.svg" 
                     alt="Octadesk Icon" 
-                    width={40} 
-                    height={40} 
-                    className="h-10 w-10 select-none"
+                    width={32} 
+                    height={32} 
+                    className="h-8 w-8 select-none"
                   />
                 </div>
                 
-                <div className="space-y-1 text-center">
-                  <span className="text-[10px] uppercase font-mono tracking-widest text-[#2d62ff] font-bold">prioridade identificada</span>
-                  <h3 className="text-base md:text-lg font-extrabold text-[#2d62ff] tracking-tight">
+                <div className="text-center">
+                  <span className="text-[9px] uppercase font-mono tracking-widest text-[#2d62ff] font-bold">prioridade identificada</span>
+                  <h3 className="text-sm md:text-base font-extrabold text-[#2d62ff] tracking-tight">
                     {TOOLS_CONFIG[computedResult.prioridadeFerramenta].name}
                   </h3>
                 </div>
 
-                <div className="p-3 rounded-xl bg-[#272F47] border border-white/5 text-zinc-200 text-xs leading-relaxed max-w-lg text-center font-medium">
+                <div className="py-1.5 px-3 rounded-xl bg-[#272F47] border border-white/5 text-zinc-200 text-[11px] leading-relaxed max-w-lg text-center font-medium">
                   {computedResult.diagnostico.mensagemInterface}
                 </div>
 
-                <div className="w-full max-w-lg bg-[#f8e4e4] border border-red-500/20 py-1.5 px-3 rounded-xl flex items-center justify-between shadow-sm">
+                <div className="w-full max-w-lg bg-[#f8e4e4] border border-red-500/20 py-1 px-3 rounded-xl flex items-center justify-between shadow-sm">
                   <div className="space-y-0.5 text-left">
-                    <span className="text-[9px] uppercase font-bold tracking-wider text-[#7f1d1d] block">Prejuízo Operacional Estimado</span>
-                    <span className="text-base md:text-lg font-black text-[#7f1d1d]">
+                    <span className="text-[8px] uppercase font-bold tracking-wider text-[#7f1d1d] block">Prejuízo Operacional Estimado</span>
+                    <span className="text-sm md:text-base font-black text-[#7f1d1d]">
                       R$ {((computedResult.prejuizoOperacional || 0) * 1250).toLocaleString('pt-BR')}/mês
                     </span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[9px] uppercase font-bold tracking-wider text-[#7f1d1d] block font-semibold">Nível de Vazamento</span>
-                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase border ${
+                    <span className="text-[8px] uppercase font-bold tracking-wider text-[#7f1d1d] block font-semibold">Nível de Vazamento</span>
+                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase border ${
                       computedResult.prejuizoOperacional > 10 
                         ? "bg-[#f8e4e4] text-[#7f1d1d] border-red-400/30" 
                         : computedResult.prejuizoOperacional > 5 
@@ -878,9 +878,9 @@ export default function QuizApp() {
                   </div>
                 </div>
 
-                <div className="w-full max-w-lg border-t border-white/5 pt-2 text-left space-y-1">
-                  <h4 className="text-[9px] uppercase font-mono tracking-wider text-zinc-400 font-bold text-center">Pontuação por Pilar:</h4>
-                  <div className="flex flex-row flex-wrap justify-center gap-x-4 gap-y-1 text-[10px]">
+                <div className="w-full max-w-lg border-t border-white/5 pt-1 text-left space-y-0.5">
+                  <h4 className="text-[8px] uppercase font-mono tracking-wider text-zinc-400 font-bold text-center">Pontuação por Pilar:</h4>
+                  <div className="flex flex-row flex-wrap justify-center gap-x-4 gap-y-0.5 text-[9px]">
                     {[
                       { label: "FAQ", val: computedResult.toolScores.faq, key: 'faq' },
                       { label: "Vendas", val: computedResult.toolScores.sales, key: 'sales' },
@@ -901,51 +901,51 @@ export default function QuizApp() {
                 </div>
 
                 {(computedResult.prioridadeFerramenta === 'sales' || computedResult.prioridadeFerramenta === 'cart' || computedResult.prioridadeFerramenta === 'faq') && (
-                  <div className="w-full max-w-lg border-t border-white/5 pt-2.5 text-left space-y-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] uppercase font-mono tracking-wider text-white font-extrabold flex items-center gap-1">
+                  <div className="w-full max-w-lg border-t border-white/5 pt-1.5 text-left space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] uppercase font-mono tracking-wider text-white font-extrabold flex items-center gap-1">
                         ⚡ Solução Recomendada de I.A.
                       </span>
-                      <span className="text-[9px] bg-[#2d62ff]/20 text-[#2d62ff] border border-[#2d62ff]/30 font-bold px-2 py-0.5 rounded-full uppercase animate-pulse">
+                      <span className="text-[8px] bg-[#2d62ff]/20 text-[#2d62ff] border border-[#2d62ff]/30 font-bold px-1.5 py-0.5 rounded-full uppercase animate-pulse">
                         Imediato
                       </span>
                     </div>
                     
                     {computedResult.prioridadeFerramenta === 'sales' ? (
-                      <div className="p-2.5 rounded-xl border border-white/10 bg-[#272F47]/40 flex flex-col gap-1 shadow-sm relative overflow-hidden">
-                        <h5 className="font-extrabold text-xs text-white flex items-center gap-1.5">
+                      <div className="py-1.5 px-2.5 rounded-xl border border-white/10 bg-[#272F47]/40 flex flex-col gap-0.5 shadow-sm relative overflow-hidden">
+                        <h5 className="font-extrabold text-[11px] text-white flex items-center gap-1.5">
                           🤖 Agente de I.A. para Vendas Octadesk
                         </h5>
-                        <p className="text-[10px] text-zinc-300 leading-relaxed font-medium">
+                        <p className="text-[9px] text-zinc-300 leading-relaxed font-medium">
                           Qualifica leads, atende a intenções de compra e fecha vendas no WhatsApp e Instagram 24/7, repassando contatos quentes ao time.
                         </p>
-                        <div className="flex items-center justify-between text-[9px] font-bold text-[#2d62ff] pt-1.5 border-t border-white/5 mt-0.5">
+                        <div className="flex items-center justify-between text-[8px] font-bold text-[#2d62ff] pt-1 border-t border-white/5 mt-0.5">
                           <span>🚀 Tempo de Resposta: -95%</span>
                           <span>📈 Conversão Média: +30%</span>
                         </div>
                       </div>
                     ) : computedResult.prioridadeFerramenta === 'cart' ? (
-                      <div className="p-2.5 rounded-xl border border-white/10 bg-[#272F47]/40 flex flex-col gap-1 shadow-sm relative overflow-hidden">
-                        <h5 className="font-extrabold text-xs text-white flex items-center gap-1.5">
+                      <div className="py-1.5 px-2.5 rounded-xl border border-white/10 bg-[#272F47]/40 flex flex-col gap-0.5 shadow-sm relative overflow-hidden">
+                        <h5 className="font-extrabold text-[11px] text-white flex items-center gap-1.5">
                           🛒 Recuperador de Carrinho Abandonado via WhatsApp
                         </h5>
-                        <p className="text-[10px] text-zinc-300 leading-relaxed font-medium">
+                        <p className="text-[9px] text-zinc-300 leading-relaxed font-medium">
                           Detecta abandono de checkout e dispara fluxos conversacionais automáticos no WhatsApp com cupons de resgate.
                         </p>
-                        <div className="flex items-center justify-between text-[9px] font-bold text-[#2d62ff] pt-1.5 border-t border-white/5 mt-0.5">
+                        <div className="flex items-center justify-between text-[8px] font-bold text-[#2d62ff] pt-1 border-t border-white/5 mt-0.5">
                           <span>💰 Recuperação Média: 15% a 25%</span>
                           <span>⏱️ Resgate: Tempo Real</span>
                         </div>
                       </div>
                     ) : (
-                      <div className="p-2.5 rounded-xl border border-white/10 bg-[#272F47]/40 flex flex-col gap-1 shadow-sm relative overflow-hidden">
-                        <h5 className="font-extrabold text-xs text-white flex items-center gap-1.5">
+                      <div className="py-1.5 px-2.5 rounded-xl border border-white/10 bg-[#272F47]/40 flex flex-col gap-0.5 shadow-sm relative overflow-hidden">
+                        <h5 className="font-extrabold text-[11px] text-white flex items-center gap-1.5">
                           🤖 Agente de I.A. para Dúvidas Frequentes Octadesk
                         </h5>
-                        <p className="text-[10px] text-zinc-300 leading-relaxed font-medium">
+                        <p className="text-[9px] text-zinc-300 leading-relaxed font-medium">
                           Responde dúvidas sobre manuais, fretes e políticas de forma instantânea e natural no WhatsApp e chat 24/7.
                         </p>
-                        <div className="flex items-center justify-between text-[9px] font-bold text-[#2d62ff] pt-1.5 border-t border-white/5 mt-0.5">
+                        <div className="flex items-center justify-between text-[8px] font-bold text-[#2d62ff] pt-1 border-t border-white/5 mt-0.5">
                           <span>🚀 Redução de FAQ: -80%</span>
                           <span>⏱️ Resposta: Instantânea</span>
                         </div>
@@ -954,10 +954,10 @@ export default function QuizApp() {
                   </div>
                 )}
 
-                <div className="w-full max-w-lg pt-3">
+                <div className="w-full max-w-lg pt-2">
                   <button
                     onClick={handleReset}
-                    className="w-full py-2.5 text-xs font-black rounded-xl tracking-wide uppercase bg-gradient-to-r from-[#00D1A0] to-[#00B58A] text-[#1F2538] hover:from-[#00E5BC] hover:to-[#00D1A0] active:scale-[0.98] shadow-lg shadow-green-900/10 transition-all duration-150 cursor-pointer block text-center"
+                    className="w-full py-2 text-xs font-black rounded-xl tracking-wide uppercase bg-gradient-to-r from-[#00D1A0] to-[#00B58A] text-[#1F2538] hover:from-[#00E5BC] hover:to-[#00D1A0] active:scale-[0.98] shadow-lg shadow-green-900/10 transition-all duration-150 cursor-pointer block text-center"
                   >
                     Finalizar Diagnóstico
                   </button>
