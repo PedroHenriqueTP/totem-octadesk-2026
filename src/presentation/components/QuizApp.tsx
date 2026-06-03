@@ -191,12 +191,44 @@ export default function QuizApp() {
   }, []);
 
   const isEmailValid = (email: string) => /\S+@\S+\.\S+/.test(email);
+  const isPhoneValid = (phone: string) => {
+    const clean = phone.replace(/\D/g, "");
+    return clean.length === 10 || clean.length === 11;
+  };
+  const formatarTelefone = (value: string) => {
+    const cleanValue = value.replace(/\D/g, "");
+    if (cleanValue.length <= 2) return cleanValue;
+    if (cleanValue.length <= 6) {
+      return `(${cleanValue.slice(0, 2)}) ${cleanValue.slice(2)}`;
+    }
+    if (cleanValue.length <= 10) {
+      return `(${cleanValue.slice(0, 2)}) ${cleanValue.slice(2, 6)}-${cleanValue.slice(6)}`;
+    }
+    return `(${cleanValue.slice(0, 2)}) ${cleanValue.slice(2, 7)}-${cleanValue.slice(7, 11)}`;
+  };
   const isStep1Valid =
     formData.nome.trim().length >= 2 &&
     formData.empresa.trim().length >= 2 &&
     isEmailValid(formData.email) &&
-    formData.telefone.trim().length >= 8 &&
+    isPhoneValid(formData.telefone) &&
     formData.cargo.trim().length >= 2;
+
+  const nomeError = formData.nome !== "" && formData.nome.trim().length < 2;
+  const phoneError = formData.telefone !== "" && !isPhoneValid(formData.telefone);
+  const emailError = formData.email !== "" && !isEmailValid(formData.email);
+  const empresaError = formData.empresa !== "" && formData.empresa.trim().length < 2;
+  const cargoError = formData.cargo !== "" && formData.cargo.trim().length < 2;
+
+  const getInputClass = (hasError: boolean, value: string, isValid: boolean) => {
+    const baseClass = "w-full p-2.5 rounded-xl bg-[#1F2538]/70 backdrop-blur-md text-white placeholder-zinc-500 text-xs focus:outline-none transition-all border";
+    if (hasError) {
+      return `${baseClass} border-red-500/60 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 bg-red-950/10`;
+    }
+    if (value !== "" && isValid) {
+      return `${baseClass} border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-emerald-950/5`;
+    }
+    return `${baseClass} border-white/10 focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff]`;
+  };
 
   const isStep2Valid = 
     diagnosticoData.equipe !== "" && 
@@ -530,10 +562,11 @@ export default function QuizApp() {
                       type="text"
                       placeholder="Ex: Reinaldo Alves"
                       autoComplete="off"
-                      className="w-full p-2.5 rounded-xl bg-[#1F2538]/70 backdrop-blur-md border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
+                      className={getInputClass(nomeError, formData.nome, formData.nome.trim().length >= 2)}
                       value={formData.nome}
                       onChange={(e) => handleInputChange("nome", e.target.value)}
                     />
+                    {nomeError && <p className="text-[9px] text-red-400 font-bold ml-1">Mínimo de 2 caracteres</p>}
                   </div>
 
                   <div className="space-y-1">
@@ -542,10 +575,11 @@ export default function QuizApp() {
                       type="text"
                       placeholder="Ex: (11) 99999-9999"
                       autoComplete="off"
-                      className="w-full p-2.5 rounded-xl bg-[#1F2538]/70 backdrop-blur-md border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
+                      className={getInputClass(phoneError, formData.telefone, isPhoneValid(formData.telefone))}
                       value={formData.telefone}
-                      onChange={(e) => handleInputChange("telefone", e.target.value)}
+                      onChange={(e) => handleInputChange("telefone", formatarTelefone(e.target.value))}
                     />
+                    {phoneError && <p className="text-[9px] text-red-400 font-bold ml-1">DDD + número inválido</p>}
                   </div>
                 </div>
 
@@ -555,10 +589,11 @@ export default function QuizApp() {
                     type="email"
                     placeholder="Ex: pedro@empresa.com"
                     autoComplete="off"
-                    className="w-full p-2.5 rounded-xl bg-[#1F2538]/70 backdrop-blur-md border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
+                    className={getInputClass(emailError, formData.email, isEmailValid(formData.email))}
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                   />
+                  {emailError && <p className="text-[9px] text-red-400 font-bold ml-1">E-mail inválido</p>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -568,10 +603,11 @@ export default function QuizApp() {
                       type="text"
                       placeholder="Ex: Tech Co."
                       autoComplete="off"
-                      className="w-full p-2.5 rounded-xl bg-[#1F2538]/70 backdrop-blur-md border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
+                      className={getInputClass(empresaError, formData.empresa, formData.empresa.trim().length >= 2)}
                       value={formData.empresa}
                       onChange={(e) => handleInputChange("empresa", e.target.value)}
                     />
+                    {empresaError && <p className="text-[9px] text-red-400 font-bold ml-1">Mínimo de 2 caracteres</p>}
                   </div>
 
                   <div className="space-y-1">
@@ -580,10 +616,11 @@ export default function QuizApp() {
                       type="text"
                       placeholder="Ex: Marketing, Diretoria ou Vendas"
                       autoComplete="off"
-                      className="w-full p-2.5 rounded-xl bg-[#1F2538]/70 backdrop-blur-md border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
+                      className={getInputClass(cargoError, formData.cargo, formData.cargo.trim().length >= 2)}
                       value={formData.cargo}
                       onChange={(e) => handleInputChange("cargo", e.target.value)}
                     />
+                    {cargoError && <p className="text-[9px] text-red-400 font-bold ml-1">Mínimo de 2 caracteres</p>}
                   </div>
                 </div>
               </div>
