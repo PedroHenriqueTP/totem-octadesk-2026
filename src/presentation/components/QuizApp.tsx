@@ -432,7 +432,7 @@ export default function QuizApp() {
   return (
     <main className="min-h-screen md:h-screen w-full flex flex-col justify-between items-center pt-1 pb-2.5 px-4 md:px-6 bg-[#2D354D] md:overflow-hidden select-none">
       
-      <header className="w-full max-w-4xl flex justify-between items-center z-10 pt-2 md:pt-3 mb-1 px-4">
+      <header className="w-full max-w-4xl flex justify-between items-center relative z-30 pt-2 md:pt-3 mb-1 px-4">
         <div className="flex items-center">
           <Image 
             src="/assets/octadesk-logo-white.svg" 
@@ -449,7 +449,7 @@ export default function QuizApp() {
           </span>
           <button
             onClick={() => setIsAdminOpen(true)}
-            className="p-1.5 rounded-lg border border-white/10 bg-[#1F2538]/80 text-zinc-300 hover:text-white hover:bg-[#272F47] transition-all cursor-pointer text-sm shadow-sm flex items-center justify-center w-8 h-8"
+            className="p-2 rounded-lg border border-white/10 bg-[#1F2538]/80 text-zinc-300 hover:text-white hover:bg-[#272F47] transition-all cursor-pointer text-lg shadow-sm flex items-center justify-center w-10 h-10"
             title="Painel de Controle"
           >
             📊
