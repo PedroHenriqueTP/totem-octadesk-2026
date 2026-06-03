@@ -878,13 +878,13 @@ export default function QuizApp() {
               exit="exit"
               className="text-center py-8 space-y-6 flex flex-col items-center justify-center min-h-[280px]"
             >
-              <div className="flex items-center justify-center w-12 h-12 mb-2">
+              <div className="flex items-center justify-center mb-2">
                 <Image 
                   src="/assets/octadesk-octopus-white.svg" 
                   alt="Octadesk Octopus" 
-                  width={48} 
-                  height={48} 
-                  className="h-12 w-12 select-none animate-pulse"
+                  width={40} 
+                  height={40} 
+                  className="h-10 w-10 mx-auto select-none animate-pulse"
                 />
               </div>
 
@@ -972,98 +972,104 @@ export default function QuizApp() {
                   }}
                   className="space-y-1 flex flex-col items-center"
                 >
-                  <div className="p-2 bg-blue-500/10 rounded-full border border-blue-500/20 shadow-md">
+                  <div className="flex items-center justify-center mb-2">
                     <Image
                       src="/assets/octadesk-octopus-white.svg"
                       alt="Octadesk"
-                      width={32}
-                      height={32}
-                      className="h-8 w-8 select-none animate-pulse"
+                      width={40}
+                      height={40}
+                      className="h-10 w-10 mx-auto select-none animate-pulse"
                     />
                   </div>
                   <h1 className={`text-lg md:text-xl font-black tracking-tight leading-tight uppercase ${titleClass}`}>
                     {title}
                   </h1>
-                  <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
-                    Recomendação Estratégica
-                  </p>
-                  <h2 className={`text-xs md:text-sm font-extrabold tracking-tight uppercase px-3 py-1 rounded-full border shadow-sm ${badgeClass}`}>
-                    {recommendation}
-                  </h2>
+                  {!isMax && (
+                    <>
+                      <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                        Recomendação Estratégica
+                      </p>
+                      <h2 className={`text-xs md:text-sm font-extrabold tracking-tight uppercase px-3 py-1 rounded-full border shadow-sm ${badgeClass}`}>
+                        {recommendation}
+                      </h2>
+                    </>
+                  )}
                 </motion.div>
 
-                {!isMax && (
-                  <motion.div
-                    variants={{
-                      hidden: { opacity: 0, scale: 0.97 },
-                      visible: { opacity: 1, scale: 1, transition: { duration: 0.4 } }
-                    }}
-                    className="w-full grid grid-cols-1 md:grid-cols-2 gap-3"
-                  >
-                    <div className="bg-[#1F2538]/60 border border-red-500/25 rounded-2xl py-2.5 px-4 flex flex-col justify-between items-center space-y-1 text-center shadow-lg relative overflow-hidden backdrop-blur-md max-h-[130px]">
-                      <div className="absolute top-0 left-0 w-full h-[3px] bg-red-500/50" />
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-red-400">Vazamento Financeiro</span>
-                      <span className="text-xl md:text-2xl font-black text-red-500 tracking-tight my-0.5">
-                        R$ {((computedResult.prejuizoOperacional || 0) * 1250).toLocaleString('pt-BR')}/mês
-                      </span>
-                      <span className="text-[10px] text-zinc-400 leading-normal">desperdício operacional acumulado</span>
-                      <span className={`text-[10px] font-black px-3 py-0.5 rounded-full uppercase border mt-1 ${
-                        computedResult.prejuizoOperacional > 10
+                <motion.div
+                  variants={{
+                    hidden: { opacity: 0, scale: 0.97 },
+                    visible: { opacity: 1, scale: 1, transition: { duration: 0.4 } }
+                  }}
+                  className="w-full grid grid-cols-1 md:grid-cols-2 gap-3"
+                >
+                  <div className={`bg-[#1F2538]/60 border rounded-2xl py-2.5 px-4 flex flex-col justify-between items-center space-y-1 text-center shadow-lg relative overflow-hidden backdrop-blur-md max-h-[130px] ${isMax ? 'border-emerald-500/25' : 'border-red-500/25'}`}>
+                    <div className={`absolute top-0 left-0 w-full h-[3px] ${isMax ? 'bg-emerald-500/50' : 'bg-red-500/50'}`} />
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${isMax ? 'text-emerald-400' : 'text-red-400'}`}>Vazamento Financeiro</span>
+                    <span className={`text-xl md:text-2xl font-black tracking-tight my-0.5 ${isMax ? 'text-emerald-400' : 'text-red-500'}`}>
+                      R$ {((computedResult.prejuizoOperacional || 0) * 1250).toLocaleString('pt-BR')}/mês
+                    </span>
+                    <span className="text-[10px] text-zinc-400 leading-normal">desperdício operacional acumulado</span>
+                    <span className={`text-[10px] font-black px-3 py-0.5 rounded-full uppercase border mt-1 ${
+                      isMax
+                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                        : computedResult.prejuizoOperacional > 10
                           ? "bg-red-500/20 text-red-400 border-red-500/30"
                           : computedResult.prejuizoOperacional > 5
                             ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
                             : "bg-green-500/20 text-green-400 border-green-500/30"
-                      }`}>
-                        Risco {computedResult.prejuizoOperacional > 10 ? 'Crítico' : computedResult.prejuizoOperacional > 5 ? 'Médio' : 'Baixo'}
-                      </span>
-                    </div>
-
-                    <div className="bg-[#1F2538]/60 border border-white/10 rounded-2xl py-2.5 px-4 flex flex-col justify-between space-y-2 shadow-lg backdrop-blur-md max-h-[130px]">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-300 text-center">Desempenho por Pilar</span>
-                      <div className="space-y-1 text-left">
-                        {[
-                          { label: "Atendimento (FAQ)", key: 'faq' },
-                          { label: "Automação de Vendas", key: 'sales' },
-                          { label: "Status de Pedidos", key: 'info' },
-                          { label: "Carrinho Abandonado", key: 'cart' },
-                        ].map((item) => {
-                          const scoreVal = computedResult.toolScores[item.key as keyof typeof computedResult.toolScores] || 0;
-                          const isWinner = computedResult.prioridadeFerramenta === item.key;
-                          return (
-                            <div key={item.key} className="space-y-0.5">
-                              <div className="flex justify-between text-[10px] font-bold">
-                                <span className={isWinner ? "text-[#00D1A0]" : "text-zinc-300"}>
-                                  {isWinner ? "★ " : ""}{item.label}
-                            </span>
-                            <span className="font-mono text-zinc-400">{scoreVal} pts</span>
-                          </div>
-                          <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${Math.min((scoreVal / 6) * 100, 100)}%` }}
-                              transition={{ duration: 0.8, ease: "easeOut" }}
-                              className={`h-full rounded-full ${isWinner ? 'bg-[#00D1A0]' : 'bg-blue-500/50'}`}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
+                    }`}>
+                      Risco {isMax ? 'Zero' : computedResult.prejuizoOperacional > 10 ? 'Crítico' : computedResult.prejuizoOperacional > 5 ? 'Médio' : 'Baixo'}
+                    </span>
                   </div>
-                </div>
-              </motion.div>
-                )}
 
-              <motion.div
-                variants={{
-                  hidden: { opacity: 0, y: 10 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
-                }}
-                className="w-full max-w-xl bg-[#1F2538]/60 border border-white/10 rounded-2xl py-2 px-4 shadow-xl text-center backdrop-blur-md relative"
-              >
-                <p className="text-xs md:text-sm text-zinc-200 leading-relaxed font-semibold">
-                  {message}
-                </p>
-              </motion.div>
+                  <div className="bg-[#1F2538]/60 border border-white/10 rounded-2xl py-2.5 px-4 flex flex-col justify-between space-y-2 shadow-lg backdrop-blur-md max-h-[130px]">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-300 text-center">Desempenho por Pilar</span>
+                    <div className="space-y-1 text-left">
+                      {[
+                        { label: "Atendimento (FAQ)", key: 'faq' },
+                        { label: "Automação de Vendas", key: 'sales' },
+                        { label: "Status de Pedidos", key: 'info' },
+                        { label: "Carrinho Abandonado", key: 'cart' },
+                      ].map((item) => {
+                        const scoreVal = computedResult.toolScores[item.key as keyof typeof computedResult.toolScores] || 0;
+                        const isWinner = computedResult.prioridadeFerramenta === item.key;
+                        return (
+                          <div key={item.key} className="space-y-0.5">
+                            <div className="flex justify-between text-[10px] font-bold">
+                              <span className={isWinner ? "text-[#00D1A0]" : "text-zinc-300"}>
+                                {isWinner ? "★ " : ""}{item.label}
+                              </span>
+                              <span className="font-mono text-zinc-400">{scoreVal} pts</span>
+                            </div>
+                            <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min((scoreVal / 6) * 100, 100)}%` }}
+                                transition={{ duration: 0.8, ease: "easeOut" }}
+                                className={`h-full rounded-full ${isWinner ? 'bg-[#00D1A0]' : 'bg-blue-500/50'}`}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+
+              {!isMax && (
+                <motion.div
+                  variants={{
+                    hidden: { opacity: 0, y: 10 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+                  }}
+                  className="w-full max-w-xl bg-[#1F2538]/60 border border-white/10 rounded-2xl py-2 px-4 shadow-xl text-center backdrop-blur-md relative"
+                >
+                  <p className="text-xs md:text-sm text-zinc-200 leading-relaxed font-semibold">
+                    {message}
+                  </p>
+                </motion.div>
+              )}
 
               <motion.div
                 variants={{

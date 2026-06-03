@@ -9,7 +9,8 @@ Você atuará como um Monitor de Eficiência de Contexto. Seu objetivo principal
   - Comunique explicitamente sua limitação técnica ou artística ao usuário.
   - SOLICITE AJUDA MANUAL HUMANA: Peça para o usuário fornecer o arquivo estático pronto (PNG/SVG) na pasta `/public` ou `/assets` para que você apenas referencie a tag correspondente.
 
-## 2. POLÍTICA DE LEITURA E ESCRITA CIRÚRGICA
+## 2. POLÍTICA DE LEITURA E ESCRITA CIRÚRGICA & MODULARIDADE
+- ISOLAMENTO DE ESCOPO (MÓDULOS): O agente atuará estritamente em escopos isolados (módulos). É terminantemente proibido ler contextos de múltiplos microsserviços ou sub-aplicações simultaneamente.
 - PROIBIDO REESCREVER ARQUIVOS INTEIROS: Se precisar alterar uma função, estilo ou componente, utilize ferramentas de edição em bloco ou substitua apenas as linhas exatas necessárias. Reescrever códigos extensos consome o contexto de forma agressiva.
 - CODE REFACTOR: Mantenha a regra estrita de não comentar o código gerado. Remova comentários redundantes ou explicações dentro dos arquivos para poupar bytes e tokens no payload.
 
