@@ -430,9 +430,9 @@ export default function QuizApp() {
   const currentQuestion = quizJourneyConfig.questions[currentQuestionIndex];
 
   return (
-    <main className="min-h-screen md:h-screen w-full flex flex-col justify-between items-center pt-1 pb-2.5 px-4 md:px-6 bg-[#2D354D] md:overflow-hidden select-none">
+    <main className="relative min-h-screen md:h-screen w-full flex flex-col justify-center items-center px-4 md:px-6 bg-[#2D354D] md:overflow-hidden select-none">
       
-      <header className="w-full max-w-4xl flex justify-between items-center relative z-30 pt-2 md:pt-3 mb-1 px-4">
+      <header className="absolute top-2 md:top-4 left-0 right-0 mx-auto w-full max-w-4xl flex justify-between items-center z-30 px-4">
         <div className="flex items-center">
           <Image 
             src="/assets/octadesk-logo-white.svg" 
@@ -457,7 +457,7 @@ export default function QuizApp() {
         </div>
       </header>
 
-      <div className="w-full max-w-4xl bg-[#1F2538] border border-[#2d62ff]/30 rounded-3xl pt-2.5 pb-4 px-4 md:pt-3 md:pb-4.5 md:px-5 shadow-xl flex flex-col justify-between z-10 relative overflow-hidden shrink-0 h-fit transition-all duration-350 text-white backdrop-blur-xl">
+      <div className="w-full max-w-4xl bg-[#1F2538] border border-[#2d62ff]/30 rounded-3xl pt-2.5 pb-4 px-4 md:pt-3 md:pb-4.5 md:px-5 shadow-xl flex flex-col justify-between z-10 relative overflow-y-auto max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-140px)] transition-all duration-350 text-white backdrop-blur-xl">
         
         {step < 4 && (
           <div className="mb-2 flex justify-center">
@@ -1135,7 +1135,7 @@ export default function QuizApp() {
 
       </div>
 
-      <footer className="mt-3 mb-2 pb-2 text-center z-10 flex flex-col items-center gap-2">
+      <footer className="absolute bottom-2 left-0 right-0 mx-auto w-full text-center z-30">
       </footer>
 
       {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}
