@@ -39,7 +39,7 @@ export default function QuizApp() {
         });
       }
       (window as any).exportLeads = () => {
-        console.log(localStorage.getItem('octadesk_totem_leads'));
+        console.log(localStorage.getItem('octadesk_deepdive_leads'));
       };
     }
   }, []);
@@ -230,6 +230,20 @@ export default function QuizApp() {
     return `${baseClass} border-white/10 focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff]`;
   };
 
+  const getLoadingHeading = (p: number) => {
+    if (p < 25) return "OCTADESK DEEPDIVE";
+    if (p < 50) return "MAPEANDO CANAIS";
+    if (p < 75) return "CALCULANDO EFICIÊNCIA";
+    return "CONSOLIDANDO DIAGNÓSTICO";
+  };
+
+  const getLoadingMessage = (p: number) => {
+    if (p < 25) return "Inicializando algoritmo de análise de canais Octadesk...";
+    if (p < 50) return "Processando histórico de interações e contatos...";
+    if (p < 75) return "Identificando vazamento financeiro e pontos cegos...";
+    return "Gerando plano de ação personalizado para sua empresa...";
+  };
+
   const isStep2Valid = 
     diagnosticoData.equipe !== "" && 
     diagnosticoData.volume !== "" && 
@@ -418,7 +432,7 @@ export default function QuizApp() {
   }, [selectedOptionText, currentQuestionIndex, hasClickedCurrentQuestion, hasErroredOnCurrentQuestion, saveLeadDataAndTransition]);
 
   const handleReset = useCallback(() => {
-    // Reset limpo do estado do Totem sem forçar reload da página local
+    // Reset limpo do estado do Octadesk DeepDive sem forçar reload da página local
     setStep(0);
     setFormData({
       nome: "",
@@ -629,7 +643,7 @@ export default function QuizApp() {
                 <button
                   onClick={() => {
                     try {
-                      const saved = localStorage.getItem('octadesk_totem_leads');
+                      const saved = localStorage.getItem('octadesk_deepdive_leads');
                       const leads = saved ? JSON.parse(saved) : [];
                       const novoLead = {
                         nome: formData.nome,
@@ -640,15 +654,11 @@ export default function QuizApp() {
                         data: new Date().toISOString()
                       };
                       leads.push(novoLead);
-                      localStorage.setItem('octadesk_totem_leads', JSON.stringify(leads));
+                      localStorage.setItem('octadesk_deepdive_leads', JSON.stringify(leads));
                     } catch (e) {
                       console.error(e);
                     }
-                    if (jornadaVersao === 'CONSULTIVA') {
-                      setStep(2);
-                    } else {
-                      setStep(3);
-                    }
+                    setStep(3);
                   }}
                   disabled={!isStep1Valid}
                   className={`w-full py-2.5 rounded-xl font-bold transition-all text-xs flex items-center justify-center gap-1.5 ${
@@ -935,11 +945,11 @@ export default function QuizApp() {
               </div>
 
               <div className="space-y-1">
-                <h3 className="text-lg font-black text-white tracking-tight">
-                  Mergulhando nos Dados...
+                <h3 className="text-lg font-black text-white tracking-tight uppercase">
+                  {getLoadingHeading(progress)}
                 </h3>
                 <p className="text-xs text-zinc-300 max-w-xs mx-auto leading-relaxed">
-                  Analisando métricas de eficiência da sua operação...
+                  {getLoadingMessage(progress)}
                 </p>
               </div>
 

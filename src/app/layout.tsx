@@ -9,8 +9,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Totem Octadesk",
-  description: "Interface para totens de ativação",
+  title: "Octadesk DeepDive",
+  description: "Interface de diagnóstico corporativo da Octadesk",
   manifest: "/manifest.json",
 };
 

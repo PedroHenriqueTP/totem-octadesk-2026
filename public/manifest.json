@@ -1,7 +1,7 @@
 {
-  "name": "Octadesk Totem DeepDive",
-  "short_name": "Totem Octadesk",
-  "description": "Interface para totens de ativação da Octadesk em tablets.",
+  "name": "Octadesk DeepDive",
+  "short_name": "Octadesk DeepDive",
+  "description": "Interface de diagnóstico corporativo da Octadesk.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "landscape",

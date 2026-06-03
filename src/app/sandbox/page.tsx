@@ -118,7 +118,7 @@ export default function SandboxPage() {
                       <span className="w-5 h-5 rounded-full bg-[#7f1d1d] text-[#f8e4e4] flex items-center justify-center text-[10px] font-black">✗</span>
                     </button>
                     <div className="p-3 bg-[#f8e4e4] border border-red-500/20 rounded-xl text-[#7f1d1d] text-xs leading-relaxed">
-                      <strong>Feedback de Erro:</strong> Aqui é exibida a explicação educativa de forma reativa no totem!
+                      <strong>Feedback de Erro:</strong> Aqui é exibida a explicação educativa de forma reativa no Octadesk DeepDive!
                     </div>
                   </div>
                 )}
