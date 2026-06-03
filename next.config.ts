@@ -15,6 +15,9 @@ const withPWA = withPWAInit({
 const nextConfig: NextConfig = {
   output: 'export',
   reactStrictMode: true,
+  images: {
+    unoptimized: true,
+  },
 };
 
 export default withPWA(nextConfig);

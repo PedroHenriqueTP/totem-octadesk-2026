@@ -12,7 +12,7 @@ export interface QuizQuestionOption {
     info?: number;
     cart?: number;
   };
-  prejuizo?: number; // Pontos de Prejuízo Operacional
+  prejuizo?: number;
 }
 
 export interface QuizQuestion {
@@ -23,20 +23,20 @@ export interface QuizQuestion {
 
 export const TOOLS_CONFIG = {
   faq: {
-    name: "Atendimento Automatizado (FAQ)",
-    defense: "Foco total na redução de custos operacionais e tempo de resposta de dúvidas repetitivas. Libera a equipe humana para tratar apenas de casos complexos e estratégicos."
+    name: "Agente de I.A. para Dúvidas Frequentes",
+    defense: "Responde dúvidas de forma natural e instantânea baseando-se nos seus manuais, reduzindo o esforço do time."
   },
   sales: {
     name: "Agente de Automação (Vendas)",
-    defense: "Foco na atração e qualificação de clientes em tempo real. Prospecção automatizada de leads 24/7 para garantir que nenhum cliente fique sem resposta na jornada comercial."
+    defense: "Apresenta produtos e fecha vendas diretamente no WhatsApp e chat, 24 horas por dia."
   },
   info: {
     name: "Sistema de Notificação (Informativo)",
-    defense: "Foco na proatividade operacional. Envia notificações automáticas de status de pedido e atualizações aos clientes antes que eles precisem perguntar, eliminando o estresse pós-venda."
+    defense: "Envia updates de status de pedidos e comunicados de forma automatizada no WhatsApp."
   },
   cart: {
-    name: "Recuperação de Carrinho Abandonado",
-    defense: "Foco na conversão cirúrgica de vendas perdidas no checkout. Identifica desistências e reengaja o usuário via mensagens e ofertas dinâmicas no WhatsApp para recuperar receita imediata."
+    name: "Recuperador de Carrinho Abandonado",
+    defense: "Detecta abandono no checkout e entra em contato via WhatsApp para recuperar a conversão."
   }
 };
 
@@ -44,52 +44,137 @@ export const quizJourneyConfig = {
   questions: [
     {
       id: 1,
-      question: "Quantas mentes comandam o seu atendimento hoje?",
+      question: "Como sua empresa gerencia o atendimento fora do horário comercial (noite e finais de semana)?",
       options: [
-        { text: "1 (Eu sozinho)", isCorrect: true, feedback: "Mapeado para triagem inicial simplificada.", scores: { faq: 1 }, prejuizo: 1 },
-        { text: "2 a 5", isCorrect: true, feedback: "Mapeado para escala comercial de micro-equipe.", scores: { sales: 1 }, prejuizo: 2 },
-        { text: "6 a 15", isCorrect: true, feedback: "Mapeado para suporte e atendimento estruturado.", scores: { info: 1 }, prejuizo: 3 },
-        { text: "Mais de 15", isCorrect: true, feedback: "Mapeado para recuperação e alta demanda transacional.", scores: { cart: 1 }, prejuizo: 5 }
+        { 
+          text: "Respostas apenas no próximo dia útil.", 
+          isCorrect: false, 
+          feedback: "Deixar o cliente esperando até o próximo dia útil aumenta a taxa de abandono e faz você perder leads para concorrentes mais rápidos.", 
+          scores: { faq: 3 }, 
+          prejuizo: 3 
+        },
+        { 
+          text: "Plantão manual exaustivo.", 
+          isCorrect: false, 
+          feedback: "Escalar o atendimento humano à noite e fins de semana sobrecarrega o time, gera custos extras e tem altíssimo risco de falhas.", 
+          scores: { faq: 2 }, 
+          prejuizo: 2 
+        },
+        { 
+          text: "Inteligência Artificial atende na hora, entende o contexto e auxilia em qualquer horário.", 
+          isCorrect: true, 
+          feedback: "Excelente! O atendimento imediato 24/7 mantém os leads engajados e prontos para converter.", 
+          scores: { faq: 0 }, 
+          prejuizo: 0 
+        }
       ]
     },
     {
       id: 2,
-      question: "Qual seu volume mensal de vendas ou emissão de notas?",
+      question: "Qual o maior impacto no fechamento de vendas quando a equipe comercial está ocupada?",
       options: [
-        { text: "Até 100", isCorrect: true, feedback: "Triagem para baixo volume de processamento.", scores: { faq: 1 }, prejuizo: 1 },
-        { text: "101 a 500", isCorrect: true, feedback: "Qualificação comercial de médio volume.", scores: { sales: 1 }, prejuizo: 2 },
-        { text: "501 a 1000", isCorrect: true, feedback: "Mapeado para notificações ativas de entrega.", scores: { info: 1 }, prejuizo: 4 },
-        { text: "Mais de 1000", isCorrect: true, feedback: "Mapeado para recuperação avançada de checkout.", scores: { cart: 1 }, prejuizo: 5 }
+        { 
+          text: "Clientes esperando na fila.", 
+          isCorrect: false, 
+          feedback: "Filas de espera longas destroem a taxa de conversão. No WhatsApp e chat, o cliente busca imediatismo.", 
+          scores: { sales: 3 }, 
+          prejuizo: 3 
+        },
+        { 
+          text: "Vendedores correm e perdem qualidade.", 
+          isCorrect: false, 
+          feedback: "Pressionar o time de vendas a atender múltiplos contatos simultaneamente reduz a taxa de conversão e causa erros no fechamento.", 
+          scores: { sales: 2 }, 
+          prejuizo: 2 
+        },
+        { 
+          text: "Agente de I.A. conduz a conversa, apresenta produtos e fecha a venda direto no chat.", 
+          isCorrect: true, 
+          feedback: "Perfeito! A I.A. atua no primeiro contato garantindo conversas qualificadas e fechamento ágil.", 
+          scores: { sales: 0 }, 
+          prejuizo: 0 
+        }
       ]
     },
     {
       id: 3,
-      question: "Por quais canais seus clientes mais chegam?",
+      question: "Quanto tempo sua equipe de suporte gasta respondendo a perguntas repetitivas dos clientes?",
       options: [
-        { text: "WhatsApp", isCorrect: true, feedback: "Automatização ideal para chat do WhatsApp.", scores: { sales: 1 }, prejuizo: 2 },
-        { text: "Instagram", isCorrect: true, feedback: "Automatização ideal para vendas em redes sociais.", scores: { sales: 1 }, prejuizo: 2 },
-        { text: "E-mail", isCorrect: true, feedback: "Automatização para canais clássicos.", scores: { faq: 1 }, prejuizo: 1 },
-        { text: "Chat no Site", isCorrect: true, feedback: "Mapeamento de FAQ direto no chat do site.", scores: { faq: 1 }, prejuizo: 1 },
-        { text: "Telefone", isCorrect: true, feedback: "Auxílio de triagem e informação ativa.", scores: { info: 1 }, prejuizo: 1 }
+        { 
+          text: "Equipe passa o dia respondendo dúvidas repetitivas.", 
+          isCorrect: false, 
+          feedback: "Alocar talentos humanos para responder frete, prazo e estoque é ineficiente e desperdiça tempo que poderia ser focado em fechar negócios.", 
+          scores: { faq: 3 }, 
+          prejuizo: 3 
+        },
+        { 
+          text: "Tentamos respostas prontas, mas fica frio.", 
+          isCorrect: false, 
+          feedback: "Respostas automáticas estáticas e frias afastam o cliente. A I.A. conversacional resolve de forma personalizada e humanizada.", 
+          scores: { faq: 2 }, 
+          prejuizo: 2 
+        },
+        { 
+          text: "Agente de I.A. lê os manuais da empresa e responde de forma natural e instantânea.", 
+          isCorrect: true, 
+          feedback: "Isso mesmo! O agente de I.A. resolve as dúvidas operacionais imediatamente, liberando o time para casos complexos.", 
+          scores: { faq: 0 }, 
+          prejuizo: 0 
+        }
       ]
     },
     {
       id: 4,
-      question: "Como você lida com as dúvidas repetitivas e vendas hoje?",
+      question: "O que acontece na sua operação quando um cliente abandona o carrinho no último segundo do pagamento?",
       options: [
-        { text: "100% Manual", isCorrect: true, feedback: "Necessidade crítica de automação de vendas e FAQ.", scores: { sales: 1 }, prejuizo: 5 },
-        { text: "Uso algumas automações", isCorrect: true, feedback: "Ideal para otimização de carrinhos abandonados.", scores: { cart: 1 }, prejuizo: 2 },
-        { text: "Já sou automatizado", isCorrect: true, feedback: "Mapeado para envio proativo de status pós-compra.", scores: { info: 1 }, prejuizo: 0 }
+        { 
+          text: "Perdemos a venda definitivamente.", 
+          isCorrect: false, 
+          feedback: "Não recuperar carrinhos abandonados significa deixar dinheiro na mesa. Mais de 70% dos carrinhos são abandonados.", 
+          scores: { cart: 3 }, 
+          prejuizo: 3 
+        },
+        { 
+          text: "E-mail de recuperação com baixa abertura.", 
+          isCorrect: false, 
+          feedback: "E-mails têm taxas de abertura inferiores a 15% atualmente. O WhatsApp garante abertura imediata e maior conversão.", 
+          scores: { cart: 2 }, 
+          prejuizo: 2 
+        },
+        { 
+          text: "Agente de I.A. detecta o abandono na hora e entra em contato via WhatsApp para recuperar a venda.", 
+          isCorrect: true, 
+          feedback: "Sensacional! A abordagem instantânea no canal favorito do cliente aumenta muito a chance de conversão.", 
+          scores: { cart: 0 }, 
+          prejuizo: 0 
+        }
       ]
     },
     {
       id: 5,
-      question: "Qual o seu principal desafio para este semestre?",
+      question: "Qual o nível de clareza que você tem sobre a qualidade de atendimento e o tempo de resposta do time?",
       options: [
-        { text: "Recuperar vendas perdidas", isCorrect: true, feedback: "Mapeado para recuperação de carrinho abandonado.", scores: { cart: 2 }, prejuizo: 5 },
-        { text: "Escalar sem contratar mais gente", isCorrect: true, feedback: "Mapeado para agente de automação de vendas.", scores: { sales: 2 }, prejuizo: 4 },
-        { text: "Reduzir tempo de resposta", isCorrect: true, feedback: "Mapeado para FAQ e atendimento automatizado.", scores: { faq: 2 }, prejuizo: 3 },
-        { text: "Organizar a bagunça dos canais", isCorrect: true, feedback: "Mapeado para envio proativo de notificações.", scores: { info: 2 }, prejuizo: 3 }
+        { 
+          text: "Sem controle de métricas.", 
+          isCorrect: false, 
+          feedback: "Quem não mede não gerencia. Sem dados claros, é impossível identificar gargalos ou avaliar a satisfação dos clientes.", 
+          scores: { faq: 3 }, 
+          prejuizo: 3 
+        },
+        { 
+          text: "Equipe preenche relatórios manuais cansativos.", 
+          isCorrect: false, 
+          feedback: "Relatórios manuais gastam tempo produtivo da equipe e são altamente propensos a erros e omissões.", 
+          scores: { faq: 2 }, 
+          prejuizo: 2 
+        },
+        { 
+          text: "Pesquisas de satisfação automatizadas ao fim de cada conversa e relatórios em tempo real.", 
+          isCorrect: true, 
+          feedback: "Excelente! Dados consolidados e automáticos garantem a governança e melhoria contínua do atendimento.", 
+          scores: { faq: 0 }, 
+          prejuizo: 0 
+        }
       ]
     }
   ] as QuizQuestion[],
