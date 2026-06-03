@@ -29,6 +29,21 @@ export default function QuizApp() {
   });
   const [isVersaoMenuOpen, setIsVersaoMenuOpen] = useState(false);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const registration of registrations) {
+            registration.unregister();
+          }
+        });
+      }
+      (window as any).exportLeads = () => {
+        console.log(localStorage.getItem('octadesk_totem_leads'));
+      };
+    }
+  }, []);
+
   // Estados do formulário de cadastro (Step 1)
   const [formData, setFormData] = useState({
     nome: "",
@@ -81,26 +96,81 @@ export default function QuizApp() {
     prejuizoOperacional: number;
   } | null>(null);
 
-  // Efeito de animação de progresso do loading (Step 4)
+  const seedRandomResult = useCallback(() => {
+    const scenarios = ['max', 'mod', 'critical'] as const;
+    const chosenScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+    const randomScores = {
+      faq: Math.floor(Math.random() * 6),
+      sales: Math.floor(Math.random() * 6),
+      info: Math.floor(Math.random() * 6),
+      cart: Math.floor(Math.random() * 6)
+    };
+    const prioridade = obterFerramentaPrioritaria(randomScores);
+    let prejuizo = 0;
+    let finalScore = 5;
+    let trilha: TrilhaResultado = 'Controle';
+    if (chosenScenario === 'max') {
+      prejuizo = 0;
+      finalScore = 5;
+      trilha = Math.random() > 0.5 ? 'Controle' : 'Enterprise';
+    } else if (chosenScenario === 'mod') {
+      prejuizo = Math.floor(Math.random() * 5) + 1;
+      finalScore = Math.floor(Math.random() * 3) + 3;
+      trilha = Math.random() > 0.5 ? 'Automacao' : 'Atendimento';
+    } else {
+      prejuizo = Math.floor(Math.random() * 10) + 6;
+      finalScore = Math.floor(Math.random() * 3);
+      trilha = Math.random() > 0.5 ? 'Controle' : 'Automacao';
+    }
+    let destino: 'TRANSBORDO_COMERCIAL_URGENTE' | 'TRILHA_AUTOMACAO_ECOMMERCE' | 'TRILHA_GESTAO_WHATSAPP' | 'TRIAGEM_PADRAO' = 'TRIAGEM_PADRAO';
+    if (trilha === 'Enterprise') destino = 'TRANSBORDO_COMERCIAL_URGENTE';
+    else if (trilha === 'Automacao') destino = 'TRILHA_AUTOMACAO_ECOMMERCE';
+    else if (trilha === 'Atendimento') destino = 'TRILHA_GESTAO_WHATSAPP';
+    const mockResult = {
+      trilha,
+      score: finalScore,
+      diagnostico: {
+        destino,
+        focoProduto: TOOLS_CONFIG[prioridade].name,
+        mensagemInterface: TOOLS_CONFIG[prioridade].defense,
+        brindeQualificado: finalScore === 5
+      },
+      toolScores: randomScores,
+      prioridadeFerramenta: prioridade,
+      prejuizoOperacional: prejuizo
+    };
+    setComputedResult(mockResult);
+    setPolvoState(`trilha_${trilha.toLowerCase()}` as PolvoState);
+  }, [setPolvoState]);
+
   useEffect(() => {
     if (step !== 4) return;
+    setProgress(0);
+    const duration = 3000;
     const effectStartTime = Date.now();
-    const duration = 2000;
-
     const interval = setInterval(() => {
       const elapsed = Date.now() - effectStartTime;
       const currentProgress = Math.min((elapsed / duration) * 100, 100);
       setProgress(currentProgress);
-
-      if (elapsed >= duration) {
-        clearInterval(interval);
-        setStep(5); // Vai para o resultado final
-        if (computedResult) {
-          setPolvoState(`trilha_${computedResult.trilha.toLowerCase()}` as PolvoState);
-        }
+    }, 16);
+    const timer = setTimeout(() => {
+      clearInterval(interval);
+      setProgress(100);
+      if (!computedResult) {
+        seedRandomResult();
       }
-    }, 30);
-    return () => clearInterval(interval);
+      setStep(5);
+    }, duration);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timer);
+    };
+  }, [step, computedResult, seedRandomResult]);
+
+  useEffect(() => {
+    if (step === 5 && computedResult) {
+      setPolvoState(`trilha_${computedResult.trilha.toLowerCase()}` as PolvoState);
+    }
   }, [step, computedResult, setPolvoState]);
 
   const handleInputChange = useCallback((field: keyof typeof formData, value: string) => {
@@ -360,9 +430,9 @@ export default function QuizApp() {
   const currentQuestion = quizJourneyConfig.questions[currentQuestionIndex];
 
   return (
-    <main className="min-h-screen md:h-screen w-full flex flex-col justify-between items-center pt-2 pb-4 px-4 md:px-6 bg-[#2D354D] md:overflow-hidden select-none">
+    <main className="min-h-screen md:h-screen w-full flex flex-col justify-between items-center pt-1 pb-2.5 px-4 md:px-6 bg-[#2D354D] md:overflow-hidden select-none">
       
-      <header className="w-full max-w-4xl flex justify-between items-center z-10 pt-6 md:pt-8 mb-1.5 px-4">
+      <header className="w-full max-w-4xl flex justify-between items-center z-10 pt-2 md:pt-3 mb-1 px-4">
         <div className="flex items-center">
           <Image 
             src="/assets/octadesk-logo-white.svg" 
@@ -378,7 +448,7 @@ export default function QuizApp() {
         </span>
       </header>
 
-      <div className="w-full max-w-4xl bg-[#1F2538] border border-[#2d62ff]/30 rounded-3xl pt-3 pb-5 px-4 md:pt-4 md:pb-6 md:px-5 shadow-xl flex flex-col justify-between z-10 relative overflow-hidden shrink-0 h-fit transition-all duration-350 text-white backdrop-blur-xl">
+      <div className="w-full max-w-4xl bg-[#1F2538] border border-[#2d62ff]/30 rounded-3xl pt-2.5 pb-4 px-4 md:pt-3 md:pb-4.5 md:px-5 shadow-xl flex flex-col justify-between z-10 relative overflow-hidden shrink-0 h-fit transition-all duration-350 text-white backdrop-blur-xl">
         
         {step < 4 && (
           <div className="mb-2 flex justify-center">
@@ -449,8 +519,9 @@ export default function QuizApp() {
                     <label className="text-[10px] uppercase tracking-wider text-zinc-300 font-bold">Seu Nome *</label>
                     <input
                       type="text"
-                      placeholder="Ex: Pedro Silva"
-                      className="w-full p-2.5 rounded-xl bg-[#1F2538] border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
+                      placeholder="Ex: Reinaldo Alves"
+                      autoComplete="off"
+                      className="w-full p-2.5 rounded-xl bg-[#1F2538]/70 backdrop-blur-md border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
                       value={formData.nome}
                       onChange={(e) => handleInputChange("nome", e.target.value)}
                     />
@@ -461,7 +532,8 @@ export default function QuizApp() {
                     <input
                       type="text"
                       placeholder="Ex: (11) 99999-9999"
-                      className="w-full p-2.5 rounded-xl bg-[#1F2538] border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
+                      autoComplete="off"
+                      className="w-full p-2.5 rounded-xl bg-[#1F2538]/70 backdrop-blur-md border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
                       value={formData.telefone}
                       onChange={(e) => handleInputChange("telefone", e.target.value)}
                     />
@@ -473,7 +545,8 @@ export default function QuizApp() {
                   <input
                     type="email"
                     placeholder="Ex: pedro@empresa.com"
-                    className="w-full p-2.5 rounded-xl bg-[#1F2538] border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
+                    autoComplete="off"
+                    className="w-full p-2.5 rounded-xl bg-[#1F2538]/70 backdrop-blur-md border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                   />
@@ -485,7 +558,8 @@ export default function QuizApp() {
                     <input
                       type="text"
                       placeholder="Ex: Tech Co."
-                      className="w-full p-2.5 rounded-xl bg-[#1F2538] border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
+                      autoComplete="off"
+                      className="w-full p-2.5 rounded-xl bg-[#1F2538]/70 backdrop-blur-md border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
                       value={formData.empresa}
                       onChange={(e) => handleInputChange("empresa", e.target.value)}
                     />
@@ -495,8 +569,9 @@ export default function QuizApp() {
                     <label className="text-[10px] uppercase tracking-wider text-zinc-300 font-bold">Seu Cargo *</label>
                     <input
                       type="text"
-                      placeholder="Ex: Diretor de Operações"
-                      className="w-full p-2.5 rounded-xl bg-[#1F2538] border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
+                      placeholder="Ex: Marketing, Diretoria ou Vendas"
+                      autoComplete="off"
+                      className="w-full p-2.5 rounded-xl bg-[#1F2538]/70 backdrop-blur-md border border-white/10 text-white placeholder-zinc-500 text-xs focus:outline-none focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff] transition-all"
                       value={formData.cargo}
                       onChange={(e) => handleInputChange("cargo", e.target.value)}
                     />
@@ -507,6 +582,22 @@ export default function QuizApp() {
               <div className="pt-1">
                 <button
                   onClick={() => {
+                    try {
+                      const saved = localStorage.getItem('octadesk_totem_leads');
+                      const leads = saved ? JSON.parse(saved) : [];
+                      const novoLead = {
+                        nome: formData.nome,
+                        whatsapp: formData.telefone,
+                        email: formData.email,
+                        empresa: formData.empresa,
+                        cargo: formData.cargo,
+                        data: new Date().toISOString()
+                      };
+                      leads.push(novoLead);
+                      localStorage.setItem('octadesk_totem_leads', JSON.stringify(leads));
+                    } catch (e) {
+                      console.error(e);
+                    }
                     if (jornadaVersao === 'CONSULTIVA') {
                       setStep(2);
                     } else {
@@ -785,186 +876,212 @@ export default function QuizApp() {
               initial="initial"
               animate="animate"
               exit="exit"
-              className="text-center py-10 space-y-8 flex flex-col items-center justify-center"
+              className="text-center py-8 space-y-6 flex flex-col items-center justify-center min-h-[280px]"
             >
-              <div className="space-y-3">
-                <h2 className="text-3xl font-black text-[#2d62ff] animate-pulse">
+              <div className="flex items-center justify-center w-12 h-12 mb-2">
+                <Image 
+                  src="/assets/octadesk-octopus-white.svg" 
+                  alt="Octadesk Octopus" 
+                  width={48} 
+                  height={48} 
+                  className="h-12 w-12 select-none animate-pulse"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <h3 className="text-lg font-black text-white tracking-tight">
                   Mergulhando nos Dados...
-                </h2>
-                <p className="text-base text-zinc-300 max-w-sm mx-auto leading-relaxed">
-                  Processando suas respostas e formulando o diagnóstico de inteligência operacional...
+                </h3>
+                <p className="text-xs text-zinc-300 max-w-xs mx-auto leading-relaxed">
+                  Analisando métricas de eficiência da sua operação...
                 </p>
               </div>
 
-              <div className="w-full max-w-md bg-[#1F2538] rounded-full h-4 border border-white/10 overflow-hidden relative shadow-inner">
+              <div className="w-full max-w-xs bg-[#1F2538] rounded-full h-2 border border-white/10 overflow-hidden relative shadow-inner">
                 <motion.div
                   className="h-full bg-[#2d62ff]"
                   style={{ width: `${progress}%` }}
                 />
               </div>
 
-              <span className="font-mono text-xs text-[#2d62ff] tracking-widest uppercase font-bold">
-                {Math.round(progress)}% DIAGNOSTICADO
+              <span className="font-mono text-[10px] text-[#2d62ff] tracking-widest uppercase font-bold">
+                {Math.round(progress)}% Processado
               </span>
             </motion.div>
           )}
 
-          {step === 5 && computedResult && (
-            <motion.div
-              key="success"
-              variants={slideVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="text-center space-y-2 py-0.5 flex flex-col items-center"
-            >
-              <div className="space-y-1">
-                <span className="text-[9px] font-mono uppercase tracking-[0.3em] px-2.5 py-1 rounded-full border font-bold text-[#2d62ff] border-[#2d62ff]/30 bg-[#1F2538]">
-                  Diagnóstico Concluído
-                </span>
-                <h2 className="text-base md:text-lg font-extrabold text-white leading-tight">
-                  SEU DIAGNÓSTICO DE EFICIÊNCIA OPERACIONAL ESTÁ PRONTO!
-                </h2>
-                <p className="text-zinc-300 text-[10px] max-w-md mx-auto">
-                  Com base no perfil da sua equipe e nas respostas do quiz, o motor identificou a sua prioridade técnica de automação.
-                </p>
-              </div>
+          {step === 5 && computedResult && (() => {
+            const isMax = computedResult.prejuizoOperacional === 0;
+            const isMod = computedResult.prejuizoOperacional > 0 && computedResult.score >= 3;
+            
+            let title = "";
+            let message = "";
+            let recommendation = "";
+            let ctaText = "";
+            let titleClass = "";
+            let badgeClass = "";
+            
+            if (isMax) {
+              title = `🏆 PARABÉNS, ${(formData.nome || "VISITANTE").toUpperCase()}!`;
+              message = `A ${formData.empresa || "sua empresa"} opera no topo do mercado com R$ 0 de prejuízo. Que tal escalar esses resultados com uma parceria estratégica exclusiva?`;
+              recommendation = "Parceria Estratégica com a Octadesk";
+              ctaText = "Firmar Parceria com Octadesk 🚀";
+              titleClass = "bg-gradient-to-r from-yellow-400 to-amber-300 bg-clip-text text-transparent";
+              badgeClass = "text-yellow-400 bg-yellow-400/10 border-yellow-400/25";
+            } else if (isMod) {
+              title = "DIAGNÓSTICO DE EFICIÊNCIA CONCLUÍDO";
+              message = `${formData.nome || "Visitante"}, identificamos pontos cegos na ${formData.empresa || "sua empresa"}. Vamos otimizar sua margem?`;
+              recommendation = TOOLS_CONFIG[computedResult.prioridadeFerramenta].name;
+              ctaText = "Otimizar Canais Operacionais 📈";
+              titleClass = "text-white";
+              badgeClass = "text-[#00D1A0] bg-[#00D1A0]/10 border-[#00D1A0]/20";
+            } else {
+              title = "DIAGNÓSTICO DE EFICIÊNCIA CONCLUÍDO";
+              message = `${formData.nome || "Visitante"}, a ${formData.empresa || "sua empresa"} está deixando dinheiro na mesa. Ative o plano de resgate imediato.`;
+              recommendation = TOOLS_CONFIG[computedResult.prioridadeFerramenta].name;
+              ctaText = "Iniciar Plano de Resgate 🚨";
+              titleClass = "text-red-400";
+              badgeClass = "text-red-400 bg-red-400/10 border-red-400/20";
+            }
 
-              <div 
-                className="py-2 px-3 md:py-2.5 md:px-4 rounded-2xl bg-[#1F2538] border border-[#2d62ff]/20 w-full max-w-2xl flex flex-col items-center space-y-2 shadow-2xl relative"
-                style={{ 
-                  boxShadow: '0 10px 40px rgba(45, 98, 255, 0.05)'
+            return (
+              <motion.div
+                key="success"
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                variants={{
+                  hidden: { opacity: 0, y: 15 },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    transition: {
+                      duration: 0.4,
+                      staggerChildren: 0.12,
+                      delayChildren: 0.1
+                    }
+                  },
+                  exit: { opacity: 0, y: -15, transition: { duration: 0.25 } }
                 }}
+                className="text-center space-y-2 py-0.5 flex flex-col items-center w-full max-w-2xl mx-auto"
               >
-                <div className="scale-100">
-                  <Image 
-                    src="/assets/octadesk-octopus-white.svg" 
-                    alt="Octadesk Icon" 
-                    width={32} 
-                    height={32} 
-                    className="h-8 w-8 select-none"
-                  />
-                </div>
-                
-                <div className="text-center">
-                  <span className="text-[9px] uppercase font-mono tracking-widest text-[#2d62ff] font-bold">prioridade identificada</span>
-                  <h3 className="text-sm md:text-base font-extrabold text-[#2d62ff] tracking-tight">
-                    {TOOLS_CONFIG[computedResult.prioridadeFerramenta].name}
-                  </h3>
-                </div>
-
-                <div className="py-1.5 px-3 rounded-xl bg-[#272F47] border border-white/5 text-zinc-200 text-[11px] leading-relaxed max-w-lg text-center font-medium">
-                  {computedResult.diagnostico.mensagemInterface}
-                </div>
-
-                <div className="w-full max-w-lg bg-[#f8e4e4] border border-red-500/20 py-1 px-3 rounded-xl flex items-center justify-between shadow-sm">
-                  <div className="space-y-0.5 text-left">
-                    <span className="text-[8px] uppercase font-bold tracking-wider text-[#7f1d1d] block">Prejuízo Operacional Estimado</span>
-                    <span className="text-sm md:text-base font-black text-[#7f1d1d]">
-                      R$ {((computedResult.prejuizoOperacional || 0) * 1250).toLocaleString('pt-BR')}/mês
-                    </span>
+                <motion.div
+                  variants={{
+                    hidden: { opacity: 0, y: -15 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+                  }}
+                  className="space-y-1 flex flex-col items-center"
+                >
+                  <div className="p-2 bg-blue-500/10 rounded-full border border-blue-500/20 shadow-md">
+                    <Image
+                      src="/assets/octadesk-octopus-white.svg"
+                      alt="Octadesk"
+                      width={32}
+                      height={32}
+                      className="h-8 w-8 select-none animate-pulse"
+                    />
                   </div>
-                  <div className="text-right">
-                    <span className="text-[8px] uppercase font-bold tracking-wider text-[#7f1d1d] block font-semibold">Nível de Vazamento</span>
-                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase border ${
-                      computedResult.prejuizoOperacional > 10 
-                        ? "bg-[#f8e4e4] text-[#7f1d1d] border-red-400/30" 
-                        : computedResult.prejuizoOperacional > 5 
-                          ? "bg-[#fcf8d8] text-[#5e5515] border-yellow-400/30" 
-                          : "bg-[#cef5ca] text-[#114e0b] border-green-400/30"
-                    }`}>
-                      {computedResult.prejuizoOperacional > 10 ? 'Crítico' : computedResult.prejuizoOperacional > 5 ? 'Médio' : 'Baixo'}
-                    </span>
-                  </div>
-                </div>
+                  <h1 className={`text-lg md:text-xl font-black tracking-tight leading-tight uppercase ${titleClass}`}>
+                    {title}
+                  </h1>
+                  <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                    Recomendação Estratégica
+                  </p>
+                  <h2 className={`text-xs md:text-sm font-extrabold tracking-tight uppercase px-3 py-1 rounded-full border shadow-sm ${badgeClass}`}>
+                    {recommendation}
+                  </h2>
+                </motion.div>
 
-                <div className="w-full max-w-lg border-t border-white/5 pt-1 text-left space-y-0.5">
-                  <h4 className="text-[8px] uppercase font-mono tracking-wider text-zinc-400 font-bold text-center">Pontuação por Pilar:</h4>
-                  <div className="flex flex-row flex-wrap justify-center gap-x-4 gap-y-0.5 text-[9px]">
-                    {[
-                      { label: "FAQ", val: computedResult.toolScores.faq, key: 'faq' },
-                      { label: "Vendas", val: computedResult.toolScores.sales, key: 'sales' },
-                      { label: "Notificação", val: computedResult.toolScores.info, key: 'info' },
-                      { label: "Carrinho", val: computedResult.toolScores.cart, key: 'cart' },
-                    ].map((item) => {
-                      const isWinner = computedResult.prioridadeFerramenta === item.key;
-                      return (
-                        <span 
-                          key={item.key} 
-                          className={`font-semibold ${isWinner ? 'text-[#00D1A0] font-black' : 'text-zinc-400'}`}
-                        >
-                          {item.label}: <span className="font-mono">{item.val} pts</span>
-                        </span>
+                {!isMax && (
+                  <motion.div
+                    variants={{
+                      hidden: { opacity: 0, scale: 0.97 },
+                      visible: { opacity: 1, scale: 1, transition: { duration: 0.4 } }
+                    }}
+                    className="w-full grid grid-cols-1 md:grid-cols-2 gap-3"
+                  >
+                    <div className="bg-[#1F2538]/60 border border-red-500/25 rounded-2xl py-2.5 px-4 flex flex-col justify-between items-center space-y-1 text-center shadow-lg relative overflow-hidden backdrop-blur-md max-h-[130px]">
+                      <div className="absolute top-0 left-0 w-full h-[3px] bg-red-500/50" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-red-400">Vazamento Financeiro</span>
+                      <span className="text-xl md:text-2xl font-black text-red-500 tracking-tight my-0.5">
+                        R$ {((computedResult.prejuizoOperacional || 0) * 1250).toLocaleString('pt-BR')}/mês
+                      </span>
+                      <span className="text-[10px] text-zinc-400 leading-normal">desperdício operacional acumulado</span>
+                      <span className={`text-[10px] font-black px-3 py-0.5 rounded-full uppercase border mt-1 ${
+                        computedResult.prejuizoOperacional > 10
+                          ? "bg-red-500/20 text-red-400 border-red-500/30"
+                          : computedResult.prejuizoOperacional > 5
+                            ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                            : "bg-green-500/20 text-green-400 border-green-500/30"
+                      }`}>
+                        Risco {computedResult.prejuizoOperacional > 10 ? 'Crítico' : computedResult.prejuizoOperacional > 5 ? 'Médio' : 'Baixo'}
+                      </span>
+                    </div>
+
+                    <div className="bg-[#1F2538]/60 border border-white/10 rounded-2xl py-2.5 px-4 flex flex-col justify-between space-y-2 shadow-lg backdrop-blur-md max-h-[130px]">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-300 text-center">Desempenho por Pilar</span>
+                      <div className="space-y-1 text-left">
+                        {[
+                          { label: "Atendimento (FAQ)", key: 'faq' },
+                          { label: "Automação de Vendas", key: 'sales' },
+                          { label: "Status de Pedidos", key: 'info' },
+                          { label: "Carrinho Abandonado", key: 'cart' },
+                        ].map((item) => {
+                          const scoreVal = computedResult.toolScores[item.key as keyof typeof computedResult.toolScores] || 0;
+                          const isWinner = computedResult.prioridadeFerramenta === item.key;
+                          return (
+                            <div key={item.key} className="space-y-0.5">
+                              <div className="flex justify-between text-[10px] font-bold">
+                                <span className={isWinner ? "text-[#00D1A0]" : "text-zinc-300"}>
+                                  {isWinner ? "★ " : ""}{item.label}
+                            </span>
+                            <span className="font-mono text-zinc-400">{scoreVal} pts</span>
+                          </div>
+                          <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${Math.min((scoreVal / 6) * 100, 100)}%` }}
+                              transition={{ duration: 0.8, ease: "easeOut" }}
+                              className={`h-full rounded-full ${isWinner ? 'bg-[#00D1A0]' : 'bg-blue-500/50'}`}
+                            />
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
                 </div>
-
-                {(computedResult.prioridadeFerramenta === 'sales' || computedResult.prioridadeFerramenta === 'cart' || computedResult.prioridadeFerramenta === 'faq') && (
-                  <div className="w-full max-w-lg border-t border-white/5 pt-1.5 text-left space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[9px] uppercase font-mono tracking-wider text-white font-extrabold flex items-center gap-1">
-                        ⚡ Solução Recomendada de I.A.
-                      </span>
-                      <span className="text-[8px] bg-[#2d62ff]/20 text-[#2d62ff] border border-[#2d62ff]/30 font-bold px-1.5 py-0.5 rounded-full uppercase animate-pulse">
-                        Imediato
-                      </span>
-                    </div>
-                    
-                    {computedResult.prioridadeFerramenta === 'sales' ? (
-                      <div className="py-1.5 px-2.5 rounded-xl border border-white/10 bg-[#272F47]/40 flex flex-col gap-0.5 shadow-sm relative overflow-hidden">
-                        <h5 className="font-extrabold text-[11px] text-white flex items-center gap-1.5">
-                          🤖 Agente de I.A. para Vendas Octadesk
-                        </h5>
-                        <p className="text-[9px] text-zinc-300 leading-relaxed font-medium">
-                          Qualifica leads, atende a intenções de compra e fecha vendas no WhatsApp e Instagram 24/7, repassando contatos quentes ao time.
-                        </p>
-                        <div className="flex items-center justify-between text-[8px] font-bold text-[#2d62ff] pt-1 border-t border-white/5 mt-0.5">
-                          <span>🚀 Tempo de Resposta: -95%</span>
-                          <span>📈 Conversão Média: +30%</span>
-                        </div>
-                      </div>
-                    ) : computedResult.prioridadeFerramenta === 'cart' ? (
-                      <div className="py-1.5 px-2.5 rounded-xl border border-white/10 bg-[#272F47]/40 flex flex-col gap-0.5 shadow-sm relative overflow-hidden">
-                        <h5 className="font-extrabold text-[11px] text-white flex items-center gap-1.5">
-                          🛒 Recuperador de Carrinho Abandonado via WhatsApp
-                        </h5>
-                        <p className="text-[9px] text-zinc-300 leading-relaxed font-medium">
-                          Detecta abandono de checkout e dispara fluxos conversacionais automáticos no WhatsApp com cupons de resgate.
-                        </p>
-                        <div className="flex items-center justify-between text-[8px] font-bold text-[#2d62ff] pt-1 border-t border-white/5 mt-0.5">
-                          <span>💰 Recuperação Média: 15% a 25%</span>
-                          <span>⏱️ Resgate: Tempo Real</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="py-1.5 px-2.5 rounded-xl border border-white/10 bg-[#272F47]/40 flex flex-col gap-0.5 shadow-sm relative overflow-hidden">
-                        <h5 className="font-extrabold text-[11px] text-white flex items-center gap-1.5">
-                          🤖 Agente de I.A. para Dúvidas Frequentes Octadesk
-                        </h5>
-                        <p className="text-[9px] text-zinc-300 leading-relaxed font-medium">
-                          Responde dúvidas sobre manuais, fretes e políticas de forma instantânea e natural no WhatsApp e chat 24/7.
-                        </p>
-                        <div className="flex items-center justify-between text-[8px] font-bold text-[#2d62ff] pt-1 border-t border-white/5 mt-0.5">
-                          <span>🚀 Redução de FAQ: -80%</span>
-                          <span>⏱️ Resposta: Instantânea</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+              </motion.div>
                 )}
 
-                <div className="w-full max-w-lg pt-2">
-                  <button
-                    onClick={handleReset}
-                    className="w-full py-2 text-xs font-black rounded-xl tracking-wide uppercase bg-gradient-to-r from-[#00D1A0] to-[#00B58A] text-[#1F2538] hover:from-[#00E5BC] hover:to-[#00D1A0] active:scale-[0.98] shadow-lg shadow-green-900/10 transition-all duration-150 cursor-pointer block text-center"
-                  >
-                    Finalizar Diagnóstico
-                  </button>
-                </div>
-              </div>
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+                }}
+                className="w-full max-w-xl bg-[#1F2538]/60 border border-white/10 rounded-2xl py-2 px-4 shadow-xl text-center backdrop-blur-md relative"
+              >
+                <p className="text-xs md:text-sm text-zinc-200 leading-relaxed font-semibold">
+                  {message}
+                </p>
+              </motion.div>
+
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+                }}
+                className="w-full max-w-md pt-0.5"
+              >
+                <button
+                  onClick={handleReset}
+                  className="w-full py-3 text-xs md:text-sm font-black rounded-xl tracking-wider uppercase bg-gradient-to-r from-[#00D1A0] to-[#00B58A] text-[#1F2538] hover:from-[#00E5BC] hover:to-[#00D1A0] active:scale-[0.96] shadow-xl shadow-green-950/20 hover:shadow-green-900/30 transition-all duration-200 cursor-pointer block text-center"
+                >
+                  {ctaText}
+                </button>
+              </motion.div>
             </motion.div>
-          )}
+            );
+          })()}
         </AnimatePresence>
 
         <div className="mt-3 pt-2 border-t border-white/5 w-full flex flex-wrap justify-center gap-1 z-20">
@@ -982,26 +1099,14 @@ export default function QuizApp() {
              <button
                key={item.val}
                type="button"
-               onClick={() => {
-                 if (item.val === 5 && !computedResult) {
-                   const dummyScores = { faq: 5, sales: 4, info: 3, cart: 2 };
-                   setComputedResult({
-                     trilha: 'Automacao',
-                     score: 5,
-                     diagnostico: {
-                       destino: 'TRILHA_AUTOMACAO_ECOMMERCE',
-                       focoProduto: TOOLS_CONFIG.faq.name,
-                       mensagemInterface: TOOLS_CONFIG.faq.defense,
-                       brindeQualificado: true
-                     },
-                     toolScores: dummyScores,
-                     prioridadeFerramenta: 'faq',
-                     prejuizoOperacional: 12
-                   });
-                   setPolvoState('trilha_automacao');
-                 }
-                 setStep(item.val);
-               }}
+                onClick={() => {
+                  if (item.val === 5) {
+                    seedRandomResult();
+                  } else if (item.val === 4) {
+                    setComputedResult(null);
+                  }
+                  setStep(item.val);
+                }}
                className={`py-1 px-2 rounded text-[9px] font-bold transition-all cursor-pointer ${
                  step === item.val
                    ? "bg-[#00D1A0] text-[#1F2538] shadow-sm"
