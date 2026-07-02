@@ -608,9 +608,10 @@ export default function QuizApp() {
             <Image 
               src={isDarkStep ? "/assets/octadesk-logo-white.svg" : "/assets/octadesk-logo.svg"} 
               alt="Octadesk Logo" 
-              width={100} 
-              height={22} 
-              className="h-5.5 w-auto select-none"
+              width={120} 
+              height={26} 
+              style={{ width: 'auto', height: '26px' }}
+              className="select-none"
               priority 
             />
           </header>
@@ -929,47 +930,57 @@ export default function QuizApp() {
                 initial="hidden"
                 animate="show"
                 exit="exit"
-                className="py-10 text-center flex flex-col justify-between items-center w-full flex-1 max-w-md mx-auto relative overflow-hidden"
+                className="pt-2 pb-4 text-center flex flex-col justify-between items-center w-full flex-1 max-w-md mx-auto relative overflow-hidden gap-3"
               >
-                {/* Decorative Bottom Wave shape for Step 5 */}
-                {!computedResult.isDecisor && (
-                  <div className="absolute right-0 bottom-0 w-32 h-32 bg-[#2D62FF]/5 rounded-tl-[100px] pointer-events-none z-0" />
-                )}
 
-                <motion.div variants={itemVariants} className="space-y-1.5 text-center flex flex-col items-center w-full">
-                  <p className={`text-xs font-semibold ${currentTheme.textColorClass === 'text-white' ? 'text-white/80' : 'text-slate-500'}`}>
+                {/* Header: Obrigado + Alert Badge */}
+                <motion.div variants={itemVariants} className="text-center flex flex-col items-center w-full gap-1">
+                  <p className={`text-[11px] font-medium tracking-wide ${currentTheme.textColorClass === 'text-white' ? 'text-white/70' : 'text-slate-400'}`}>
                     Obrigado pela sua participação
                   </p>
                   {computedResult.isDecisor && (
                     <motion.div
                       animate={{ scale: [1, 1.04, 1] }}
                       transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                      className="bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black text-[9px] tracking-[0.2em] uppercase px-5 py-1.5 rounded-full border border-pink-400/30 shadow-[0_4px_16px_rgba(236,72,153,0.35)] my-1.5 shrink-0 select-none"
+                      className="bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black text-[9px] tracking-[0.2em] uppercase px-5 py-1.5 rounded-full border border-pink-400/30 shadow-[0_4px_16px_rgba(236,72,153,0.35)] shrink-0 select-none"
                     >
                       ★ CLIENTE FOCO • ABORDAGEM IMEDIATA ★
                     </motion.div>
                   )}
-                  <p className={`text-xs font-black tracking-wide pt-1 ${currentTheme.textColorClass === 'text-white' ? 'text-white' : 'text-slate-800'}`}>
+                </motion.div>
+
+                {/* Stage Label + Title */}
+                <motion.div variants={itemVariants} className="text-center flex flex-col items-start w-full px-1 gap-0.5">
+                  <p className={`text-[11px] font-semibold tracking-wide ${currentTheme.textColorClass === 'text-white' ? 'text-white/60' : 'text-slate-400'}`}>
                     Comece pela Etapa {computedResult.etapaRecomendada.numero}
                   </p>
-                  <h2 className={`text-3xl font-black leading-none pt-0.5 tracking-tight drop-shadow-sm w-full truncate ${computedResult.isDecisor ? 'text-pink-400' : 'text-[#2D62FF]'}`}>
+                  <h2 className={`text-4xl font-black leading-tight tracking-tight ${computedResult.isDecisor ? 'text-pink-400' : 'text-[#2D62FF]'}`}>
                     {computedResult.etapaRecomendada.nome}
                   </h2>
                 </motion.div>
 
-                {/* Box de Recomendação com Splash Art / Glassmorphism */}
-                <motion.div variants={itemVariants} className={`w-full rounded-[32px] p-6 flex flex-col items-center justify-center shadow-[0_16px_36px_rgba(31,41,55,0.06)] ${currentTheme.cardBgClass} my-auto`}>
+                {/* Illustration Card */}
+                <motion.div 
+                  variants={itemVariants} 
+                  className={`w-full rounded-[28px] flex items-center justify-center overflow-hidden flex-1 ${
+                    computedResult.isDecisor 
+                      ? currentTheme.cardBgClass 
+                      : 'bg-[#EEF4FF] border border-[#D6E4FF]/60'
+                  }`}
+                  style={{ minHeight: '180px', maxHeight: '260px' }}
+                >
                   <motion.div 
-                    animate={{ y: [0, -4, 0] }}
+                    animate={{ y: [0, -6, 0] }}
                     transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                    className="relative w-full aspect-[4/3] flex items-center justify-center select-none"
+                    className="flex items-center justify-center p-4 select-none w-full h-full"
                   >
                     <Image 
                       src={ETAPAS_PAREDE[computedResult.dorValue]?.imagePath} 
                       alt={computedResult.etapaRecomendada.nome} 
-                      width={280} 
-                      height={210} 
-                      className="w-auto h-48 object-contain rounded-2xl select-none"
+                      width={260} 
+                      height={220} 
+                      style={{ width: 'auto', height: '100%', maxHeight: '220px', objectFit: 'contain' }}
+                      className="select-none drop-shadow-xl"
                       priority
                     />
                   </motion.div>
@@ -978,23 +989,45 @@ export default function QuizApp() {
                 {/* Bottom Kiosk Dotted Curve with 3 Brand Icons */}
                 <motion.div 
                   variants={itemVariants} 
-                  className="w-full relative py-6 flex items-center justify-center select-none shrink-0"
+                  className="w-full relative flex items-end justify-center select-none shrink-0 h-10"
                 >
-                  <svg className={`absolute inset-x-0 w-full h-8 ${computedResult.isDecisor ? 'text-pink-500/20' : 'text-[#2D62FF]/15'}`} viewBox="0 0 100 20" fill="none" preserveAspectRatio="none">
-                    <path d="M0,10 Q50,20 100,10" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" fill="none" />
+                  {/* Dotted curve behind icons */}
+                  <svg 
+                    className={`absolute inset-x-4 bottom-1 h-8 ${computedResult.isDecisor ? 'text-pink-500/25' : 'text-[#2D62FF]/20'}`} 
+                    viewBox="0 0 120 24" 
+                    fill="none" 
+                    preserveAspectRatio="none"
+                  >
+                    <path d="M4,18 Q60,4 116,18" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" fill="none" strokeLinecap="round"/>
                   </svg>
-                  <div className="flex justify-between w-3/4 max-w-[280px] relative z-10">
-                    <div className={`w-8 h-8 rounded-full border flex items-center justify-center shadow-sm transform translate-y-[-2px] ${currentTheme.textColorClass === 'text-white' ? 'bg-slate-900 border-pink-500/30 text-pink-400' : 'bg-white border-slate-200/80 text-[#2D354D]'}`}>
+                  {/* Icons on the curve */}
+                  <div className="flex justify-between items-end w-full max-w-[260px] relative z-10 px-2">
+                    {/* Chat bubble — left, high */}
+                    <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shadow-md translate-y-[-14px] ${
+                      computedResult.isDecisor 
+                        ? 'bg-slate-900 border-pink-500/40 text-pink-400' 
+                        : 'bg-white border-slate-200 text-[#2D354D]'
+                    }`}>
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <div className={`w-8 h-8 rounded-full border flex items-center justify-center shadow-sm transform translate-y-[2px] ${currentTheme.textColorClass === 'text-white' ? 'bg-slate-900 border-pink-500/30 text-pink-400' : 'bg-white border-slate-200/80 text-[#2D354D]'}`}>
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2a3 3 0 100 6 3 3 0 000-6zM6 18a3 3 0 100 6 3 3 0 000-6zM18 18a3 3 0 100 6 3 3 0 000-6zM12 8v5H6v2h12v-2h-6v-5z"/>
+                    {/* Node/org-tree — center, low (bottom of curve) */}
+                    <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shadow-md translate-y-[0px] ${
+                      computedResult.isDecisor 
+                        ? 'bg-slate-900 border-pink-500/40 text-pink-400' 
+                        : 'bg-white border-slate-200 text-[#2D354D]'
+                    }`}>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 000-2h-3z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <div className={`w-8 h-8 rounded-full border flex items-center justify-center shadow-sm transform translate-y-[-2px] ${currentTheme.textColorClass === 'text-white' ? 'bg-slate-900 border-pink-500/30 text-pink-400' : 'bg-white border-slate-200/80 text-[#2D354D]'}`}>
+                    {/* Bot/robot — right, high */}
+                    <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shadow-md translate-y-[-14px] ${
+                      computedResult.isDecisor 
+                        ? 'bg-slate-900 border-pink-500/40 text-pink-400' 
+                        : 'bg-white border-slate-200 text-[#2D354D]'
+                    }`}>
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 2a1 1 0 011 1v1h3a2 2 0 012 2v2a1 1 0 011 1v4a1 1 0 01-1 1v2a2 2 0 01-2 2h-3v1a1 1 0 11-2 0v-1H6a2 2 0 01-2-2v-2a1 1 0 01-1-1V9a1 1 0 011-1V6a2 2 0 012-2h3V3a1 1 0 011-1zm-3 8a1 1 0 100-2 1 1 0 000 2zm6-1a1 1 0 112 0 1 1 0 01-2 0z" />
                       </svg>
@@ -1002,10 +1035,17 @@ export default function QuizApp() {
                   </div>
                 </motion.div>
 
-                <motion.div variants={itemVariants} className="w-full mt-4 shrink-0">
+                {/* CTA Button */}
+                <motion.div variants={itemVariants} className="w-full shrink-0">
                   <button
                     onClick={handleReset}
-                    className={`w-full py-4 rounded-2xl font-black transition-all text-xs tracking-wider uppercase active:scale-[0.98] cursor-pointer block text-center shadow-md ${currentTheme.textColorClass === 'text-white' ? 'bg-white text-[#1F2538] hover:bg-slate-50' : 'bg-[#2D62FF] text-white hover:bg-[#1A4ED9]'}`}
+                    className={`w-full py-4 rounded-2xl font-black transition-all text-xs tracking-wider uppercase active:scale-[0.98] cursor-pointer block text-center shadow-md ${
+                      computedResult.isDecisor 
+                        ? 'bg-pink-600 text-white hover:bg-pink-700 shadow-[0_8px_24px_rgba(236,72,153,0.3)]'
+                        : currentTheme.textColorClass === 'text-white' 
+                          ? 'bg-white text-[#1F2538] hover:bg-slate-50' 
+                          : 'bg-[#2D62FF] text-white hover:bg-[#1A4ED9]'
+                    }`}
                   >
                     Novo Diagnóstico
                   </button>
