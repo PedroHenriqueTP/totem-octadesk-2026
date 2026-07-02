@@ -19,6 +19,12 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   outputFileTracingRoot: __dirname,
+  // Permite acesso LAN ao servidor de desenvolvimento (tablet no estande)
+  allowedDevOrigins: [
+    '192.168.210.91',   // IP atual do tablet
+    '192.168.210.*',    // Toda a subnet local
+    '192.168.*.*',      // Qualquer IP LAN classe C
+  ],
 };
 
 export default withPWA(nextConfig);
