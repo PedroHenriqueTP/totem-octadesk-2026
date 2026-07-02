@@ -22,6 +22,15 @@ export interface Lead {
   prioridade_ferramenta?: string;
   tempo_jornada_segundos?: number;
   isPotentialLead?: boolean;
+
+  // Novos campos refatorados (Ecossistema Digital Octadesk)
+  cargo?: string;
+  dor_principal?: string;
+  tamanho_empresa?: string;
+  volume_atendimentos?: string;
+  plataforma?: string;
+  etapa_indicada?: string;
+  is_decisor?: boolean;
   
   // Propriedades antigas mantidas como opcionais para compatibilidade
   totalFerramentas?: 'Apenas 1 (Centralizada)' | 'De 2 a 4 ferramentas' | 'De 5 a 10 ferramentas' | 'Mais de 10 ferramentas (Ecossistema complexo)';

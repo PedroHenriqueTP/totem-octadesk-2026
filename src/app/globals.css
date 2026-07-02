@@ -39,8 +39,8 @@
 }
 
 body, html {
-  background: #2D354D !important;
-  color: #FFFFFF;
+  background: #F4F6F9 !important;
+  color: #1F2538;
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow: hidden;
   height: 100vh;
@@ -57,15 +57,18 @@ body, html {
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--background-to);
+  background: #F1F5F9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #001B3D;
-  border-radius: 4px;
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
 }
 
 @keyframes pulse-slow {
@@ -137,3 +140,78 @@ input, button, select, textarea, [role="button"], .card-solucao, .octo-container
 body.admin-panel-root {
   overflow-y: auto;
 }
+
+/* Container de Totem Vertical Adaptativo */
+.totem-viewport-container {
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  max-width: calc(100dvh * 3 / 4); /* Mais largo que 9:16 para tablets */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+
+/* Ocultar barra de rolagem em toda a interface do totem */
+.totem-viewport-container,
+.totem-viewport-container * {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
+}
+.totem-viewport-container::-webkit-scrollbar,
+.totem-viewport-container *::-webkit-scrollbar {
+  display: none !important; /* Chrome/Safari/Webkit */
+}
+
+@media (min-width: 768px) {
+  .totem-viewport-container {
+    height: 96vh;
+    height: 96dvh;
+    max-height: 96dvh;
+    width: 92%;
+    max-width: 720px; /* Enquadramento perfeito na tela */
+    border-radius: 32px;
+    box-shadow: 0 25px 50px -12px rgba(31, 37, 56, 0.25);
+    border: 1px solid rgba(45, 98, 255, 0.15);
+    aspect-ratio: auto !important;
+  }
+}
+
+/* Forçar comportamento correto ocupando toda a tela em tablets e dispositivos verticais */
+@media (orientation: portrait) {
+  .totem-viewport-container {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    border: none !important;
+    aspect-ratio: auto !important;
+  }
+}
+
+/* Temas estáticos explícitos para o Viewport Container (evita problemas de cache e compilação do Tailwind) */
+.totem-theme-white {
+  background-color: #FFFFFF !important;
+  color: #1F2538 !important;
+}
+
+.totem-theme-dark {
+  background-color: #FFFFFF !important;
+  color: #1F2538 !important;
+}
+
+.totem-theme-pink {
+  background-color: #FFF0F6 !important;
+  color: #1F2538 !important;
+}
+
+.totem-theme-gradient {
+  background-color: #FFFFFF !important;
+  color: #1F2538 !important;
+}
+
+

@@ -5,44 +5,126 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { db, Lead } from '../../data/db';
 import { usePolvo, PolvoState } from '../../hooks/usePolvo';
-import { calcularTrilhaOctadesk, calcularPontosDiagnostico, obterFerramentaPrioritaria } from '../../utils/bifurcation';
-import { RespostasQuiz, TamanhoOperacao, TrilhaResultado, ToolScores } from '../../types/diagnostico';
-import { quizJourneyConfig, QuizQuestion, VERSAO_ATIVA, JornadaVersao, TOOLS_CONFIG } from '../../shared/config/quiz-journey';
+import { 
+  obterEtapaRecomendada, 
+  obterTrilhaPorDor, 
+  verificarAlertaComercial,
+  EtapaDirecionamento 
+} from '../../utils/bifurcation';
+import { RespostasQuiz, TrilhaResultado, ToolScores } from '../../types/diagnostico';
+import { 
+  quizJourneyConfig, 
+  QuizQuestion, 
+  ETAPAS_PAREDE, 
+  EtapaParedeConfig 
+} from '../../shared/config/quiz-journey';
 import { LocalStorageManager } from '../../infra/local-storage-manager';
+import { HubSpotClient } from '../../infra/hubspot';
 import AdminPanel from './AdminPanel';
+import OctoMascot from './OctoMascot';
+import { setupAutoSync, subscribeToSyncChanges } from '../../infra/sync-middleware';
+
+interface ScreenThemeConfig {
+  bgStyle: React.CSSProperties;
+  textColorClass: string;
+  subTextColorClass: string;
+  pillClass: string;
+  cardBgClass: string;
+  buttonClass: string;
+  logoType: 'blue' | 'white';
+}
+
+function getThemeForScore(score: number): ScreenThemeConfig {
+  if (score <= 1) {
+    return {
+      bgStyle: { backgroundColor: '#FFFFFF' },
+      textColorClass: 'text-[#1F2538]',
+      subTextColorClass: 'text-slate-500',
+      pillClass: 'bg-[#2D62FF]/10 text-[#2D62FF] border border-[#2D62FF]/20',
+      cardBgClass: 'bg-slate-50 border border-slate-200/80',
+      buttonClass: 'bg-[#2D62FF] text-white hover:bg-[#1A4ED9]',
+      logoType: 'blue'
+    };
+  } else if (score <= 4) {
+    return {
+      bgStyle: { backgroundColor: '#F0F5FF' },
+      textColorClass: 'text-[#1F2538]',
+      subTextColorClass: 'text-slate-500',
+      pillClass: 'bg-[#2D62FF]/15 text-[#2D62FF] border border-[#2D62FF]/20',
+      cardBgClass: 'bg-white border border-blue-100/50 shadow-sm',
+      buttonClass: 'bg-[#2D62FF] text-white hover:bg-[#1A4ED9]',
+      logoType: 'blue'
+    };
+  } else if (score <= 7) {
+    return {
+      bgStyle: { backgroundColor: '#D6E4FF' },
+      textColorClass: 'text-[#1F2538]',
+      subTextColorClass: 'text-slate-600',
+      pillClass: 'bg-[#2D62FF]/20 text-[#1D4ED8] border border-[#2D62FF]/30 font-extrabold',
+      cardBgClass: 'bg-white border border-blue-200 shadow-sm',
+      buttonClass: 'bg-[#2D62FF] text-white hover:bg-[#1A4ED9]',
+      logoType: 'blue'
+    };
+  } else if (score <= 9) {
+    return {
+      bgStyle: { backgroundColor: '#2D62FF' },
+      textColorClass: 'text-white',
+      subTextColorClass: 'text-blue-100',
+      pillClass: 'bg-white/20 text-white border border-white/25',
+      cardBgClass: 'bg-white/10 border border-white/20 backdrop-blur-sm',
+      buttonClass: 'bg-white text-slate-900 hover:bg-slate-50',
+      logoType: 'white'
+    };
+  } else {
+    return {
+      bgStyle: { backgroundColor: '#001B3D' },
+      textColorClass: 'text-white',
+      subTextColorClass: 'text-slate-300',
+      pillClass: 'bg-white/10 text-white border border-white/20',
+      cardBgClass: 'bg-white/10 border border-white/15 backdrop-blur-sm',
+      buttonClass: 'bg-white text-slate-900 hover:bg-slate-50',
+      logoType: 'white'
+    };
+  }
+}
+
+function calcularPontosLead(answers: Record<number, string>, cargo: string): number {
+  let score = 0;
+  
+  const p2 = answers[2];
+  if (p2 === "Entre 50 e 200") score += 1;
+  else if (p2 === "Entre 200 a 500") score += 2;
+  else if (p2 === "Mais de 500") score += 3;
+  
+  const p3 = answers[3];
+  if (p3 === "Entre 50 e 200") score += 1;
+  else if (p3 === "Mais de 200") score += 2;
+  
+  const p4 = answers[4];
+  if (p4 === "Shopify") score += 1;
+  else if (p4 === "Tray, VTEX, Nuvemshop ou outra plataforma com site próprio") score += 1;
+  else if (p4 === "Principalmente marketplaces (ML, Shopee, Magalu)") score += 3;
+  
+  const cargoClean = cargo ? cargo.toLowerCase().trim() : '';
+  const cargosDecisores = [
+    'ceo', 'dono', 'proprietario', 'proprietária', 'socio', 'sócio', 
+    'comprador', 'compradora', 'diretor', 'diretora', 'director', 
+    'gerente', 'manager', 'head', 'coordenador', 'coordenadora', 
+    'operacoes', 'operações', 'founder', 'cofounder'
+  ];
+  const isDecisor = cargosDecisores.some(keyword => cargoClean.includes(keyword));
+  if (isDecisor) score += 2;
+  
+  return score;
+}
 
 export default function QuizApp() {
-  // 0: Recepção, 1: Cadastro, 2: Diagnóstico, 3: Quiz, 4: Loading, 5: Veredito
+  // 0: Recepção, 1: Cadastro, 2: Dor Principal (P1), 3: Qualificação (P2-P4), 4: Processando, 5: Direcionamento, 6: Relatório, 7: Obrigado
   const [step, setStep] = useState<number>(0); 
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isDevHubVisible, setIsDevHubVisible] = useState(false);
   const [progress, setProgress] = useState(0);
-
-  // Estados de controle de versão (Feature Toggle)
-  const [jornadaVersao, setJornadaVersao] = useState<JornadaVersao>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('@octadesk-hub:jornada-versao');
-      if (saved === 'CONSULTIVA' || saved === 'ARCADE_COMPLETO' || saved === 'FAST_TRACK') {
-        return saved;
-      }
-    }
-    return VERSAO_ATIVA;
-  });
-
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          for (const registration of registrations) {
-            registration.unregister();
-          }
-        });
-      }
-      (window as any).exportLeads = () => {
-        console.log(localStorage.getItem('octadesk_deepdive_leads'));
-      };
-    }
-  }, []);
+  const [startTime, setStartTime] = useState<number | null>(null);
 
   // Estados do formulário de cadastro (Step 1)
   const [formData, setFormData] = useState({
@@ -53,144 +135,84 @@ export default function QuizApp() {
     cargo: "",
   });
 
-  // Estados do Diagnóstico (Step 2)
-  const [diagnosticoData, setDiagnosticoData] = useState({
-    equipe: "",
-    volume: "",
-    canais: [] as string[]
-  });
-
-  // Estados do Quiz (Step 3)
+  // Respostas coletadas ao longo do Quiz
+  const [answers, setAnswers] = useState<Record<number, string>>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [score, setScore] = useState(0);
-  const [hasErroredOnCurrentQuestion, setHasErroredOnCurrentQuestion] = useState(false);
-  const [selectedOptionText, setSelectedOptionText] = useState<string | null>(null);
 
-  // DeepDive: Rastreamento de tempo de jornada e pontuação das ferramentas
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [quizToolScores, setQuizToolScores] = useState<ToolScores>({
-    faq: 0,
-    sales: 0,
-    info: 0,
-    cart: 0
-  });
-  const [hasClickedCurrentQuestion, setHasClickedCurrentQuestion] = useState(false);
-  const [quizAnswers, setQuizAnswers] = useState<Record<number, string | string[]>>({});
-  const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
-
-  const [prejuizoOperacional, setPrejuizoOperacional] = useState<number>(0);
-
-  // Estados do Polvo e Resultado
+  // Lógica do Mascote Polvo
   const { state: polvoState, setState: setPolvoState, resetState: resetPolvoState } = usePolvo();
+
+  // Resultado Calculado
   const [computedResult, setComputedResult] = useState<{
-    trilha: TrilhaResultado;
+    leadId?: number;
+    dorPrincipal: string;
+    dorValue: string;
+    tamanhoEmpresa: string;
+    volumeAtendimentos: string;
+    plataforma: string;
+    etapaRecomendada: EtapaDirecionamento;
+    isDecisor: boolean;
+    sincronizado: boolean;
     score: number;
-    diagnostico: {
-      destino: string;
-      focoProduto: string;
-      mensagemInterface: string;
-      brindeQualificado: boolean;
-    };
-    toolScores: ToolScores;
-    prioridadeFerramenta: 'faq' | 'sales' | 'info' | 'cart';
-    prejuizoOperacional: number;
   } | null>(null);
 
-  const seedRandomResult = useCallback(() => {
-    const scenarios = ['max', 'mod', 'critical'] as const;
-    const chosenScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
-    const randomScores = {
-      faq: Math.floor(Math.random() * 6),
-      sales: Math.floor(Math.random() * 6),
-      info: Math.floor(Math.random() * 6),
-      cart: Math.floor(Math.random() * 6)
-    };
-    const prioridade = obterFerramentaPrioritaria(randomScores);
-    let prejuizo = 0;
-    let finalScore = 5;
-    let trilha: TrilhaResultado = 'Controle';
-    if (chosenScenario === 'max') {
-      prejuizo = 0;
-      finalScore = 5;
-      trilha = Math.random() > 0.5 ? 'Controle' : 'Enterprise';
-    } else if (chosenScenario === 'mod') {
-      prejuizo = Math.floor(Math.random() * 5) + 1;
-      finalScore = Math.floor(Math.random() * 3) + 3;
-      trilha = Math.random() > 0.5 ? 'Automacao' : 'Atendimento';
-    } else {
-      prejuizo = Math.floor(Math.random() * 10) + 6;
-      finalScore = Math.floor(Math.random() * 3);
-      trilha = Math.random() > 0.5 ? 'Controle' : 'Automacao';
-    }
-    let destino: 'TRANSBORDO_COMERCIAL_URGENTE' | 'TRILHA_AUTOMACAO_ECOMMERCE' | 'TRILHA_GESTAO_WHATSAPP' | 'TRIAGEM_PADRAO' = 'TRIAGEM_PADRAO';
-    if (trilha === 'Enterprise') destino = 'TRANSBORDO_COMERCIAL_URGENTE';
-    else if (trilha === 'Automacao') destino = 'TRILHA_AUTOMACAO_ECOMMERCE';
-    else if (trilha === 'Atendimento') destino = 'TRILHA_GESTAO_WHATSAPP';
-    const mockResult = {
-      trilha,
-      score: finalScore,
-      diagnostico: {
-        destino,
-        focoProduto: TOOLS_CONFIG[prioridade].name,
-        mensagemInterface: TOOLS_CONFIG[prioridade].defense,
-        brindeQualificado: finalScore === 5
-      },
-      toolScores: randomScores,
-      prioridadeFerramenta: prioridade,
-      prejuizoOperacional: prejuizo
-    };
-    setComputedResult(mockResult);
-    setPolvoState(`trilha_${trilha.toLowerCase()}` as PolvoState);
-  }, [setPolvoState]);
+  // Click tracking for logo to reveal debug tools (easter egg)
+  const [logoClicks, setLogoClicks] = useState(0);
+  const [lastClickTime, setLastClickTime] = useState(0);
 
-  useEffect(() => {
-    if (step !== 4) return;
-    setProgress(0);
-    const duration = 3000;
-    const effectStartTime = Date.now();
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - effectStartTime;
-      const currentProgress = Math.min((elapsed / duration) * 100, 100);
-      setProgress(currentProgress);
-    }, 16);
-    const timer = setTimeout(() => {
-      clearInterval(interval);
-      setProgress(100);
-      if (!computedResult) {
-        seedRandomResult();
+  // Estados de conectividade e sincronização PWA
+  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
+
+  const handleLogoClick = () => {
+    const now = Date.now();
+    if (now - lastClickTime < 1000) {
+      const newClicks = logoClicks + 1;
+      setLogoClicks(newClicks);
+      if (newClicks >= 5) {
+        setIsDevHubVisible(prev => !prev);
+        setLogoClicks(0);
       }
-      setStep(5);
-    }, duration);
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timer);
-    };
-  }, [step, computedResult, seedRandomResult]);
+    } else {
+      setLogoClicks(1);
+    }
+    setLastClickTime(now);
+  };
+
+  // Monitoramento do estado da conexão e fila de sincronização offline
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      Promise.resolve().then(() => {
+        setIsOnline(navigator.onLine);
+      });
+      const handleOnline = () => setIsOnline(true);
+      const handleOffline = () => setIsOnline(false);
+      window.addEventListener("online", handleOnline);
+      window.addEventListener("offline", handleOffline);
+      return () => {
+        window.removeEventListener("online", handleOnline);
+        window.removeEventListener("offline", handleOffline);
+      };
+    }
+  }, []);
 
   useEffect(() => {
-    if (step === 5 && computedResult) {
-      setPolvoState(`trilha_${computedResult.trilha.toLowerCase()}` as PolvoState);
-    }
-  }, [step, computedResult, setPolvoState]);
+    const unsubscribe = subscribeToSyncChanges((count) => {
+      setPendingSyncCount(count);
+    });
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const cleanup = setupAutoSync();
+    return cleanup;
+  }, []);
 
   const handleInputChange = useCallback((field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  const handleDiagChange = useCallback((field: keyof typeof diagnosticoData, value: string) => {
-    setDiagnosticoData((prev) => ({ ...prev, [field]: value }));
-  }, []);
 
-  const toggleCanal = useCallback((canal: string) => {
-    setDiagnosticoData(prev => {
-      const canais = prev.canais.includes(canal)
-        ? prev.canais.filter(c => c !== canal)
-        : [...prev.canais, canal];
-      return { ...prev, canais };
-    });
-  }, []);
-
-  const isEmailValid = (email: string) => /\S+@\S+\.\S+/.test(email);
   const isPhoneValid = (phone: string) => {
     const clean = phone.replace(/\D/g, "");
     return clean.length === 10 || clean.length === 11;
@@ -206,233 +228,190 @@ export default function QuizApp() {
     }
     return `(${cleanValue.slice(0, 2)}) ${cleanValue.slice(2, 7)}-${cleanValue.slice(7, 11)}`;
   };
+
   const isStep1Valid =
     formData.nome.trim().length >= 2 &&
     formData.empresa.trim().length >= 2 &&
-    isEmailValid(formData.email) &&
-    isPhoneValid(formData.telefone) &&
-    formData.cargo.trim().length >= 2;
+    formData.cargo.trim().length >= 2 &&
+    isPhoneValid(formData.telefone);
 
   const nomeError = formData.nome !== "" && formData.nome.trim().length < 2;
   const phoneError = formData.telefone !== "" && !isPhoneValid(formData.telefone);
-  const emailError = formData.email !== "" && !isEmailValid(formData.email);
   const empresaError = formData.empresa !== "" && formData.empresa.trim().length < 2;
   const cargoError = formData.cargo !== "" && formData.cargo.trim().length < 2;
 
   const getInputClass = (hasError: boolean, value: string, isValid: boolean) => {
-    const baseClass = "w-full p-2.5 rounded-xl bg-[#1F2538]/70 backdrop-blur-md text-white placeholder-zinc-500 text-xs focus:outline-none transition-all border";
+    const baseClass = "w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-50 border text-[#1F2538] placeholder-slate-400 text-sm focus:outline-none transition-all";
     if (hasError) {
-      return `${baseClass} border-red-500/60 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 bg-red-950/10`;
+      return `${baseClass} border-red-500 focus:ring-2 focus:ring-red-500/20 bg-red-50`;
     }
     if (value !== "" && isValid) {
-      return `${baseClass} border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-emerald-950/5`;
+      return `${baseClass} border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 bg-emerald-50/50`;
     }
-    return `${baseClass} border-white/10 focus:ring-2 focus:ring-[#2d62ff]/30 focus:border-[#2d62ff]`;
+    return `${baseClass} border-slate-200 focus:ring-2 focus:ring-blue-500/10 focus:border-[#2D62FF] focus:bg-white`;
   };
 
-  const getLoadingHeading = (p: number) => {
-    if (p < 25) return "OCTADESK DEEPDIVE";
-    if (p < 50) return "MAPEANDO CANAIS";
-    if (p < 75) return "CALCULANDO EFICIÊNCIA";
-    return "CONSOLIDANDO DIAGNÓSTICO";
-  };
+  // Simula a barra de progresso no processamento (Step 4)
+  useEffect(() => {
+    if (step !== 4) return;
+    const duration = 2500;
+    const effectStartTime = Date.now();
+    
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - effectStartTime;
+      const currentProgress = Math.min((elapsed / duration) * 100, 100);
+      setProgress(currentProgress);
+    }, 16);
 
-  const getLoadingMessage = (p: number) => {
-    if (p < 25) return "Inicializando algoritmo de análise de canais Octadesk...";
-    if (p < 50) return "Processando histórico de interações e contatos...";
-    if (p < 75) return "Identificando vazamento financeiro e pontos cegos...";
-    return "Gerando plano de ação personalizado para sua empresa...";
-  };
+    const timer = setTimeout(() => {
+      clearInterval(interval);
+      setProgress(100);
+      setStep(5);
+    }, duration);
 
-  const isStep2Valid = 
-    diagnosticoData.equipe !== "" && 
-    diagnosticoData.volume !== "" && 
-    diagnosticoData.canais.length > 0;
-
-  const saveLeadDataAndTransition = useCallback(async () => {
-    const finalScores = { ...quizToolScores };
-    const prioridade = obterFerramentaPrioritaria(finalScores);
-    const tempoJornadaSegundos = startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
-
-    let finalEquipe = '';
-    let finalVolume = '';
-    let finalCanais: string[] = [];
-
-    if (jornadaVersao === 'CONSULTIVA') {
-      finalEquipe = diagnosticoData.equipe;
-      finalVolume = diagnosticoData.volume;
-      finalCanais = diagnosticoData.canais;
-    } else {
-      finalEquipe = '3 a 5';
-      finalVolume = 'De 101 a 1000/mês';
-      finalCanais = ['WhatsApp'];
-    }
-
-    const isMaisDe15 = finalEquipe === 'Mais de 15' || finalEquipe === '6 a 15';
-    const isHighVolume = finalVolume === 'Mais de 1000' || finalVolume === '501 a 1000' || finalVolume === 'Mais de 1000/mês' || finalVolume === 'De 101 a 1000/mês';
-    const hasComplexChannels = finalCanais.includes('E-mail') || finalCanais.includes('Telefone') || finalCanais.length >= 3;
-
-    const tamanhoOp = (finalEquipe === 'Mais de 15' ? 'Mais de 100 colaboradores' : 
-                       finalEquipe === '6 a 15' ? 'De 6 a 20 colaboradores' : 
-                       'Ate 5 colaboradores') as TamanhoOperacao;
-
-    const respostas: RespostasQuiz = {
-      tamanhoOperacao: tamanhoOp,
-      totalFerramentas: isMaisDe15 ? 'Mais de 10 ferramentas (Ecossistema complexo)' : isHighVolume ? 'De 5 a 10 ferramentas' : 'De 2 a 4 ferramentas',
-      possuiCarrinhoAbandonado: isHighVolume || finalCanais.includes('WhatsApp'),
-      possuiIaVendas: !finalCanais.includes('WhatsApp'), 
-      possuiNotificacaoStatus: isHighVolume,
-      possuiIaDuvidasStatus: false,
-      possuiEmissaoNotas: isHighVolume,
-      possuiHelpdeskSla: hasComplexChannels,
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timer);
     };
+  }, [step]);
 
-    let trilha = calcularTrilhaOctadesk(respostas);
-    if (jornadaVersao !== 'CONSULTIVA') {
-      if (prejuizoOperacional === 0) {
-        trilha = 'Controle';
-      } else if (prioridade === 'sales' || prioridade === 'cart') {
-        trilha = 'Automacao';
-      } else if (prioridade === 'faq') {
-        trilha = 'Atendimento';
-      } else {
-        trilha = 'Controle';
-      }
-    }
 
+
+  // Salva o diagnóstico localmente (Dexie) e dispara integração com o HubSpot
+  const saveLeadDataAndTransition = useCallback(async (finalAnswers: Record<number, string>) => {
     setPolvoState('thinking');
 
-    const isPotential = prejuizoOperacional > 4 || (jornadaVersao === 'CONSULTIVA' && (finalEquipe === '3 a 5' || finalEquipe === '6 a 15'));
+    const dorVal = finalAnswers[1];
+    const equipeP2 = finalAnswers[2];
+    const volumeP3 = finalAnswers[3];
+    const plataformaP4 = finalAnswers[4];
 
-    const novoLead: Lead & { prejuizo_operacional?: number } = {
+    const totalScore = calcularPontosLead(finalAnswers, formData.cargo);
+
+    const etapaRec = obterEtapaRecomendada(dorVal, volumeP3, plataformaP4);
+    const trilhaCompativel = obterTrilhaPorDor(dorVal);
+    const isDecisor = verificarAlertaComercial(formData.cargo, equipeP2, volumeP3, plataformaP4);
+    const tempoJornadaSegundos = startTime ? Math.round((Date.now() - startTime) / 1000) : 0;
+
+    // Geração de e-mail fallback único se estiver em branco e cargo padrão "Participante"
+    const cleanPhone = formData.telefone.replace(/\D/g, "");
+    const generatedEmail = formData.email.trim() || `${cleanPhone || Date.now()}@octadeskevent.com.br`;
+    const defaultCargo = formData.cargo.trim() || "Participante";
+
+    // Dados estruturados para o HubSpot & Dexie DB
+    const leadData = {
       nome: formData.nome,
       empresa: formData.empresa,
-      email: formData.email,
-      contato: formData.telefone,
-      tamanhoOperacao: finalEquipe,
-      volumeVendasMes: finalVolume,
-      canais: finalCanais,
-      transbordo_urgente: isMaisDe15,
-      score_quiz: score,
-      capturado_via: 'Quiz DeepDive Tablet 2026',
-      perfil_bifurcado: trilha,
-      sincronizado: 0,
-      criado_em: new Date().toISOString(),
-      toolScores: finalScores,
-      prioridade_ferramenta: prioridade,
-      tempo_jornada_segundos: tempoJornadaSegundos,
-      isPotentialLead: isPotential,
-      prejuizo_operacional: prejuizoOperacional
+      email: generatedEmail,
+      telefone: formData.telefone,
+      cargo: defaultCargo,
+      dorPrincipal: ETAPAS_PAREDE[dorVal]?.dor || dorVal,
+      tamanhoEmpresa: equipeP2,
+      volumeAtendimentos: volumeP3,
+      plataforma: plataformaP4,
+      etapaIndicada: `Etapa ${etapaRec.numero}: ${etapaRec.nome}`,
+      isDecisor,
+      prioridadeFerramenta: dorVal,
+      tempoJornadaSegundos
     };
 
+    // 1. Tenta envio direto para o HubSpot
+    const sincronizado = await HubSpotClient.enviarFormulario(leadData);
+
+    // 2. Persiste no IndexedDB local para backup offline de contingência
+    const novoLead: Lead = {
+      nome: formData.nome,
+      empresa: formData.empresa,
+      email: generatedEmail,
+      contato: formData.telefone,
+      cargo: defaultCargo,
+      tamanhoOperacao: equipeP2,
+      volumeVendasMes: volumeP3,
+      canais: [plataformaP4],
+      transbordo_urgente: isDecisor,
+      score_quiz: 4, // 4 perguntas preenchidas
+      capturado_via: 'Quiz Tablet Fórum 2026',
+      perfil_bifurcado: trilhaCompativel,
+      sincronizado: sincronizado ? 1 : 0,
+      criado_em: new Date().toISOString(),
+
+      // Novos campos do Ecossistema
+      dor_principal: leadData.dorPrincipal,
+      tamanho_empresa: equipeP2,
+      volume_atendimentos: volumeP3,
+      plataforma: plataformaP4,
+      etapa_indicada: leadData.etapaIndicada,
+      is_decisor: isDecisor,
+      prioridade_ferramenta: dorVal,
+      tempo_jornada_segundos: tempoJornadaSegundos,
+      isPotentialLead: isDecisor
+    };
+
+    let savedId: number | undefined;
     try {
-      await db.leads.add(novoLead);
+      savedId = await db.leads.add(novoLead);
     } catch (error) {
-      console.error(error);
+      console.error("[Database] Erro ao gravar localmente:", error);
     }
 
-    let destino: 'TRANSBORDO_COMERCIAL_URGENTE' | 'TRILHA_AUTOMACAO_ECOMMERCE' | 'TRILHA_GESTAO_WHATSAPP' | 'TRIAGEM_PADRAO' = 'TRIAGEM_PADRAO';
-    if (trilha === 'Enterprise') destino = 'TRANSBORDO_COMERCIAL_URGENTE';
-    else if (trilha === 'Automacao') destino = 'TRILHA_AUTOMACAO_ECOMMERCE';
-    else if (trilha === 'Atendimento') destino = 'TRILHA_GESTAO_WHATSAPP';
-    else if (trilha === 'Controle') destino = 'TRIAGEM_PADRAO';
-
+    // 3. Salva no localStorage legado para compatibilidade do hook legado
     const diagnosticoResultado = {
-      destino,
-      focoProduto: TOOLS_CONFIG[prioridade].name,
-      mensagemInterface: TOOLS_CONFIG[prioridade].defense,
-      brindeQualificado: score === 5
+      destino: (isDecisor ? 'TRANSBORDO_COMERCIAL_URGENTE' : 'TRIAGEM_PADRAO') as 'TRANSBORDO_COMERCIAL_URGENTE' | 'TRIAGEM_PADRAO',
+      focoProduto: etapaRec.nome,
+      mensagemInterface: ETAPAS_PAREDE[dorVal]?.description || "",
+      brindeQualificado: isDecisor
     };
 
     LocalStorageManager.salvarLeadLocal({
       nome: formData.nome,
       empresa: formData.empresa,
-      email: formData.email,
+      email: generatedEmail,
       telefone: formData.telefone,
-      tamanhoOperacao: finalEquipe,
-      volumeVendasMes: finalVolume,
-      canais: finalCanais,
-      transbordoUrgente: isMaisDe15,
-      scoreQuiz: score,
-      toolScores: finalScores,
-      prioridadeFerramenta: prioridade,
-      tempoJornadaSegundos: tempoJornadaSegundos,
-      isPotentialLead: isPotential,
-      prejuizoOperacional: prejuizoOperacional
+      tamanhoOperacao: equipeP2,
+      volumeVendasMes: volumeP3,
+      canais: [plataformaP4],
+      transbordoUrgente: isDecisor,
+      scoreQuiz: 4,
+      tempoJornadaSegundos,
+      isPotentialLead: isDecisor
     }, diagnosticoResultado);
 
     setComputedResult({
-      trilha,
-      score,
-      diagnostico: diagnosticoResultado,
-      toolScores: finalScores,
-      prioridadeFerramenta: prioridade,
-      prejuizoOperacional
+      leadId: savedId,
+      dorPrincipal: leadData.dorPrincipal,
+      dorValue: dorVal,
+      tamanhoEmpresa: equipeP2,
+      volumeAtendimentos: volumeP3,
+      plataforma: plataformaP4,
+      etapaRecomendada: etapaRec,
+      isDecisor,
+      sincronizado,
+      score: totalScore
     });
 
+    setPolvoState(`trilha_${trilhaCompativel.toLowerCase()}` as PolvoState);
     setProgress(0);
-    setStep(4);
-  }, [formData, score, quizToolScores, startTime, setPolvoState, prejuizoOperacional, jornadaVersao, diagnosticoData]);
+    setStep(4); // Vai para a tela de processamento
+  }, [formData, startTime, setPolvoState]);
 
-  // Processa a seleção de opções no quiz com feedback visual reativo
-  const handleSelectQuizOption = useCallback((option: { 
-    text: string; 
-    isCorrect: boolean; 
-    feedback: string;
-    scores?: { faq?: number; sales?: number; info?: number; cart?: number };
-    prejuizo?: number;
-  }) => {
-    if (selectedOptionText !== null && option.text !== selectedOptionText) {
-      const currentQuestion = quizJourneyConfig.questions[currentQuestionIndex];
-      const isCorrectSelected = currentQuestion.options.find(o => o.text === selectedOptionText)?.isCorrect;
-      if (isCorrectSelected) return;
-    }
+  // Trata a seleção de opções nas perguntas do Quiz
+  const handleSelectOption = useCallback((optionValue: string) => {
+    const activeQuestion = quizJourneyConfig.questions[currentQuestionIndex];
+    const newAnswers = { ...answers, [activeQuestion.id]: optionValue };
+    setAnswers(newAnswers);
 
-    // Registra a pontuação apenas na primeira resposta a esta pergunta
-    if (!hasClickedCurrentQuestion) {
-      setHasClickedCurrentQuestion(true);
-      setQuizAnswers((prev) => ({ ...prev, [currentQuestion.id]: option.text }));
-      
-      // Acumula Prejuízo Operacional
-      if (option.prejuizo !== undefined) {
-        setPrejuizoOperacional((prev) => prev + option.prejuizo!);
+    if (currentQuestionIndex < quizJourneyConfig.questions.length - 1) {
+      setCurrentQuestionIndex((prev) => prev + 1);
+      // Se era a P1 (índice 0), avança para a Etapa 3 (Perguntas de qualificação)
+      if (currentQuestionIndex === 0) {
+        setStep(3);
       }
-
-      setQuizToolScores((prev) => {
-        const next = { ...prev };
-        if (option.scores) {
-          if (option.scores.faq) next.faq += option.scores.faq;
-          if (option.scores.sales) next.sales += option.scores.sales;
-          if (option.scores.info) next.info += option.scores.info;
-          if (option.scores.cart) next.cart += option.scores.cart;
-        }
-        return next;
-      });
-    }
-
-    setSelectedOptionText(option.text);
-
-    if (option.isCorrect) {
-      if (!hasErroredOnCurrentQuestion) {
-        setScore((prev) => prev + 1);
-      }
-      setTimeout(() => {
-        setSelectedOptionText(null);
-        setHasErroredOnCurrentQuestion(false);
-        setHasClickedCurrentQuestion(false); // Reset para a próxima pergunta
-        if (currentQuestionIndex < quizJourneyConfig.questions.length - 1) {
-          setCurrentQuestionIndex((prev) => prev + 1);
-        } else {
-          saveLeadDataAndTransition();
-        }
-      }, 600);
     } else {
-      setHasErroredOnCurrentQuestion(true);
+      saveLeadDataAndTransition(newAnswers);
     }
-  }, [selectedOptionText, currentQuestionIndex, hasClickedCurrentQuestion, hasErroredOnCurrentQuestion, saveLeadDataAndTransition]);
+  }, [currentQuestionIndex, answers, saveLeadDataAndTransition]);
 
   const handleReset = useCallback(() => {
-    // Reset limpo do estado do Octadesk DeepDive sem forçar reload da página local
     setStep(0);
     setFormData({
       nome: "",
@@ -441,749 +420,892 @@ export default function QuizApp() {
       telefone: "",
       cargo: "",
     });
-    setDiagnosticoData({
-      equipe: "",
-      volume: "",
-      canais: []
-    });
+    setAnswers({});
     setCurrentQuestionIndex(0);
-    setScore(0);
-    setPrejuizoOperacional(0);
-    setHasErroredOnCurrentQuestion(false);
-    setSelectedOptionText(null);
     setComputedResult(null);
     setProgress(0);
     setStartTime(null);
-    setQuizToolScores({ faq: 0, sales: 0, info: 0, cart: 0 });
-    setHasClickedCurrentQuestion(false);
-    setQuizAnswers({});
-    setSelectedChannels([]);
     resetPolvoState();
   }, [resetPolvoState]);
 
-  const getMascotState = useCallback((): 'floating' | 'thinking' | 'success' => {
-    if (step === 4) return 'thinking';
-    if (step === 5) return 'success';
-    return 'floating';
-  }, [step]);
+  // Helper para obter a letra da opção selecionada (A, B, C, D, E)
+  const obterLetraOpcao = useCallback((questionIndex: number, valor: string): string => {
+    const question = quizJourneyConfig.questions[questionIndex];
+    if (!question) return '';
+    const optIndex = question.options.findIndex(opt => opt.value === valor);
+    if (optIndex === -1) return '';
+    return String.fromCharCode(65 + optIndex);
+  }, []);
+
+  // Força um resultado aleatório para propósitos de simulação/debug no rodapé
+  const seedRandomResult = useCallback(() => {
+    const dores = ['captacao', 'vendas', 'notificacoes', 'posvenda', 'helpdesk'];
+    const equipes = ['Menos de 50', 'Entre 50 e 200', 'Entre 200 a 500', 'Mais de 500'];
+    const volumes = ['Menos de 50', 'Entre 50 e 200', 'Mais de 200', 'Não sei / não acompanho esse número'];
+    const plataformas = ['Shopify', 'Tray, VTEX, Nuvemshop ou outra plataforma com site próprio', 'Principalmente marketplaces (ML, Shopee, Magalu)', 'Ainda não tenho loja online'];
+
+    const chosenDor = dores[Math.floor(Math.random() * dores.length)];
+    const chosenEquipe = equipes[Math.floor(Math.random() * equipes.length)];
+    const chosenVolume = volumes[Math.floor(Math.random() * volumes.length)];
+    const chosenPlat = plataformas[Math.floor(Math.random() * plataformas.length)];
+
+    const mockAnswers = {
+      1: chosenDor,
+      2: chosenEquipe,
+      3: chosenVolume,
+      4: chosenPlat
+    };
+
+    setAnswers(mockAnswers);
+    saveLeadDataAndTransition(mockAnswers);
+  }, [saveLeadDataAndTransition]);
+
+  // Redireciona automaticamente da tela de Obrigado (Obrigado) ou da tela de Direcionamento (Etapa Recomendada) para o Início após um tempo
+  useEffect(() => {
+    if (step !== 5 && step !== 7) return;
+    const timeoutDuration = step === 5 ? 20000 : 8000; // 20s para a tela final (Direcionamento), 8s para Obrigado
+    const timer = setTimeout(() => {
+      handleReset();
+    }, timeoutDuration);
+    return () => clearTimeout(timer);
+  }, [step, handleReset]);
 
   const slideVariants = {
-    initial: { opacity: 0, x: 40 },
-    animate: { opacity: 1, x: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
-    exit: { opacity: 0, x: -40, transition: { duration: 0.25, ease: "easeIn" as const } }
+    initial: { opacity: 0, y: 30 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+    exit: { opacity: 0, y: -30, transition: { duration: 0.3, ease: "easeIn" } }
+  } as const;
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.12,
+        delayChildren: 0.05
+      }
+    },
+    exit: { opacity: 0, transition: { duration: 0.25 } }
+  } as const;
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 16 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 15 } }
+  } as const;
+
+  const activeQuestion = quizJourneyConfig.questions[currentQuestionIndex];
+
+  const getSubheading = (id: number) => {
+    switch (id) {
+      case 1:
+        return "Escolha a que mais te incomoda.";
+      case 2:
+      case 3:
+        return "Ajuda a entender o porte da operação.";
+      case 4:
+      default:
+        return "Selecione a plataforma onde realiza suas vendas.";
+    }
   };
 
-  const currentQuestion = quizJourneyConfig.questions[currentQuestionIndex];
+  const renderProgressHeader = (questionNum: number) => {
+    return (
+      <div className="w-full flex flex-col items-center mb-3 space-y-2.5 z-10 select-none">
+        <span className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-[#2D62FF]">
+          PERGUNTA {questionNum} DE 4
+        </span>
+        <div className="flex items-center gap-2">
+          {[1, 2, 3, 4].map((num) => (
+            <div
+              key={num}
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                num === questionNum
+                  ? "bg-[#2D62FF]"
+                  : "bg-slate-200"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const leadScore = computedResult?.score ?? 0;
+  let currentTheme = getThemeForScore(leadScore);
+  if (computedResult?.isDecisor) {
+    currentTheme = {
+      bgStyle: { background: 'radial-gradient(circle at center, #0B0F19 0%, #030712 100%)' },
+      textColorClass: 'text-white',
+      subTextColorClass: 'text-slate-300',
+      pillClass: 'bg-pink-500/25 text-pink-400 border border-pink-500/35 font-extrabold animate-pulse shadow-[0_0_15px_rgba(236,72,153,0.15)]',
+      cardBgClass: 'bg-slate-900/60 border border-pink-500/30 backdrop-blur-md shadow-[0_0_40px_rgba(236,72,153,0.18)]',
+      buttonClass: 'bg-pink-600 text-white hover:bg-pink-700 shadow-[0_8px_24px_rgba(236,72,153,0.3)]',
+      logoType: 'white'
+    };
+  }
+  const isDarkStep = step >= 5 && currentTheme.logoType === 'white';
+
 
   return (
-    <main className="relative min-h-screen md:h-screen w-full flex flex-col justify-center items-center px-4 md:px-6 bg-[#2D354D] md:overflow-hidden select-none">
-      
-      <header className="absolute top-2 md:top-4 left-0 right-0 mx-auto w-full max-w-4xl flex justify-between items-center z-30 px-4">
-        <div className="flex items-center">
-          <Image 
-            src="/assets/octadesk-logo-white.svg" 
-            alt="Octadesk" 
-            width={120} 
-            height={26} 
-            className="h-6 w-auto select-none"
-            priority 
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1.5 rounded-full border border-white/10 bg-[#1F2538]/80 text-zinc-300 shadow-sm">
-            Fórum E-commerce Brasil 2026
-          </span>
-          <button
-            onClick={() => setIsAdminOpen(true)}
-            className="p-2 rounded-lg border border-white/10 bg-[#1F2538]/80 text-zinc-300 hover:text-white hover:bg-[#272F47] transition-all cursor-pointer text-lg shadow-sm flex items-center justify-center w-10 h-10"
-            title="Painel de Controle"
-          >
-            📊
-          </button>
-        </div>
-      </header>
-
-      <div className="w-full max-w-4xl bg-[#1F2538] border border-[#2d62ff]/30 rounded-3xl pt-2.5 pb-4 px-4 md:pt-3 md:pb-4.5 md:px-5 shadow-xl flex flex-col justify-between z-10 relative overflow-y-auto max-h-[calc(100vh-100px)] md:max-h-[calc(100vh-140px)] transition-all duration-350 text-white backdrop-blur-xl">
-        
-        {step < 4 && (
-          <div className="mb-2 flex justify-center">
-            <Image 
-              src="/assets/octadesk-octopus-white.svg" 
-              alt="Octadesk Icon" 
-              width={48} 
-              height={48} 
-              className={`${step > 0 ? 'h-8 w-8' : 'h-12 w-12'} w-auto select-none`}
+    <main className="flex min-h-screen items-center justify-center bg-[#F4F6F9] w-full p-0 md:p-4 select-none">
+      {/* Viewport Container */}
+      <div 
+        className="totem-viewport-container transition-all duration-300 relative flex flex-col justify-between overflow-hidden shadow-2xl"
+        style={step >= 5 ? { ...currentTheme.bgStyle, color: currentTheme.logoType === 'white' ? '#FFFFFF' : '#1F2538' } as React.CSSProperties : { backgroundColor: '#FFFFFF', color: '#1F2538' }}
+      >
+        {/* Special Dystopian/Cyberpunk Animated Background for Potential Leads */}
+        {step >= 5 && computedResult?.isDecisor && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+            <motion.div 
+              animate={{ 
+                scale: [1, 1.15, 0.95, 1],
+                opacity: [0.35, 0.5, 0.25, 0.35],
+              }}
+              transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
+              className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-pink-500/10 blur-[80px]"
+            />
+            <motion.div 
+              animate={{ 
+                scale: [1, 0.9, 1.1, 1],
+                opacity: [0.3, 0.45, 0.2, 0.3],
+              }}
+              transition={{ repeat: Infinity, duration: 9, ease: "easeInOut", delay: 1 }}
+              className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-pink-600/10 blur-[85px]"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(236,72,153,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(236,72,153,0.02)_1px,transparent_1px)] bg-[size:32px_32px] opacity-60" />
+            <motion.div 
+              animate={{ y: ["-10%", "110%"] }}
+              transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+              className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-pink-500/20 to-transparent shadow-[0_0_12px_rgba(236,72,153,0.4)]"
             />
           </div>
         )}
 
-        <AnimatePresence mode="wait">
-          {step === 0 && (
-            <motion.div
-              key="recepcao"
-              variants={slideVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="text-center space-y-3 py-1 flex flex-col items-center"
+        {/* Soft Watermark decoration for steps 1-4 */}
+        {(step >= 1 && step <= 4) && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+            <svg 
+              className="absolute -right-20 -bottom-20 w-80 h-80 text-blue-500/8 transform rotate-12" 
+              fill="currentColor" 
+              viewBox="0 0 100 100"
             >
-              <div className="space-y-1.5">
-                <span className="text-xs font-mono uppercase tracking-[0.25em] text-[#2d62ff] font-black block">
-                  Diagnóstico Operacional Executivo
-                </span>
-                <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-white leading-tight max-w-2xl mx-auto">
-                  Sua Operação está no topo ou perdendo dinheiro?
-                </h1>
-                <p className="text-zinc-300 text-xs md:text-sm max-w-lg mx-auto leading-relaxed">
-                  Descubra o nível de eficiência e automação dos seus canais em menos de 2 minutos e obtenha a prioridade tática para seu negócio.
-                </p>
-              </div>
-
-              <div className="w-full max-w-md pt-3.5 pb-1 mb-6">
-                <button
-                  onClick={() => { setStep(1); setStartTime(Date.now()); }}
-                  className="w-full py-3.5 text-base font-black rounded-xl tracking-wide uppercase bg-gradient-to-r from-[#00D1A0] to-[#00B58A] text-[#1F2538] hover:from-[#00E5BC] hover:to-[#00D1A0] active:scale-[0.98] shadow-lg shadow-green-900/10 transition-all duration-150 cursor-pointer block text-center"
-                >
-                  Iniciar DeepDive
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {step === 1 && (
-            <motion.div
-              key="cadastro"
-              variants={slideVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="space-y-3"
+              <path d="M0,50 C20,35 40,35 60,50 C80,65 90,65 100,50 L100,100 L0,100 Z" />
+            </svg>
+            <svg 
+              className="absolute -left-16 -top-16 w-64 h-64 text-blue-500/5 transform -rotate-45" 
+              fill="currentColor" 
+              viewBox="0 0 100 100"
             >
-              <div className="space-y-1 text-center md:text-left">
-                <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#2d62ff] font-extrabold">
-                  Etapa 1: Acolhimento
-                </span>
-                <h1 className="text-lg md:text-xl font-extrabold text-white leading-tight">
-                  Bem-vindo ao DeepDive. Como podemos te chamar?
-                </h1>
-              </div>
+              <path d="M0,50 C20,35 40,35 60,50 C80,65 90,65 100,50 L100,100 L0,100 Z" />
+            </svg>
+          </div>
+        )}
 
-              <div className="space-y-2.5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase tracking-wider text-zinc-300 font-bold">Seu Nome *</label>
+        {/* Content wrapper */}
+        <div className="flex-1 flex flex-col justify-between p-6 relative z-10 w-full overflow-hidden">
+          {/* Common Header */}
+          <header className="w-full flex justify-center mb-4 pt-2 cursor-pointer z-25 shrink-0" onClick={handleLogoClick}>
+            <Image 
+              src={isDarkStep ? "/assets/octadesk-logo-white.svg" : "/assets/octadesk-logo.svg"} 
+              alt="Octadesk Logo" 
+              width={100} 
+              height={22} 
+              className="h-5.5 w-auto select-none"
+              priority 
+            />
+          </header>
+
+          <AnimatePresence mode="wait">
+            {/* STEP 0: RECEPÇÃO */}
+            {step === 0 && (
+              <motion.div
+                key="recepcao"
+                variants={slideVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="py-10 text-center flex flex-col justify-between items-center flex-1 h-full w-full max-w-md mx-auto"
+              >
+                {/* Premium Clean Card with dynamic Octopus Mascot */}
+                <div className="relative w-36 h-36 bg-slate-50/50 rounded-[32px] flex items-center justify-center border border-slate-100 p-2 my-2 shadow-[0_16px_36px_rgba(31,41,55,0.05)]">
+                  <OctoMascot state={polvoState} size={120} />
+                </div>
+
+                <div className="flex-1 flex flex-col justify-center items-center gap-y-6 my-auto max-w-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-[#2D62FF] bg-[#2D62FF]/10 px-4 py-2 rounded-full border border-[#2D62FF]/15">
+                    Diagnóstico Operacional Executivo
+                  </span>
+                  <h1 className="text-2xl md:text-3xl font-black text-[#1F2538] leading-tight max-w-md mx-auto">
+                    Sua Operação está no <span className="text-[#2D62FF]">topo</span> ou <span className="text-red-500">perdendo dinheiro</span>?
+                  </h1>
+                  <p className="text-slate-500 text-xs md:text-sm max-w-sm mx-auto leading-relaxed font-medium">
+                    Descubra o nível de eficiência e automação dos seus canais em menos de 2 minutos e obtenha a prioridade tática para seu negócio.
+                  </p>
+                </div>
+
+                <div className="w-full max-w-sm mt-4">
+                  <button
+                    onClick={() => { setStep(1); setStartTime(Date.now()); }}
+                    className="w-full py-4 text-sm font-black rounded-2xl tracking-wider uppercase bg-[#2D62FF] text-white hover:bg-[#1A4ED9] active:scale-[0.98] shadow-[0_12px_24px_rgba(45,98,255,0.22)] transition-all duration-150 cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    Iniciar Diagnóstico
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* STEP 1: CADASTRO */}
+            {step === 1 && (
+              <motion.div
+                key="cadastro"
+                variants={slideVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="py-6 flex flex-col justify-between flex-1 h-full w-full max-w-md mx-auto"
+              >
+                <div className="space-y-3 text-center flex flex-col items-center">
+                  <h2 className="text-xl md:text-2xl font-black text-[#1F2538] leading-tight">
+                    Qual sua principal <span className="text-[#2D62FF]">dor</span> em atendimento e vendas hoje?
+                  </h2>
+                  <div className="flex flex-col items-center justify-center select-none">
+                    <svg className="w-4 h-4 text-[#2D62FF]" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7z" clipRule="evenodd" />
+                    </svg>
+                    <div className="w-8 h-0.5 bg-[#2D62FF]/60 mt-0.5 rounded-full" />
+                  </div>
+                </div>
+
+                <div className="space-y-4.5 my-auto py-4">
+                  <div className="relative">
+                    <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
                     <input
                       type="text"
-                      placeholder="Ex: Reinaldo Alves"
+                      placeholder="Nome"
                       autoComplete="off"
                       className={getInputClass(nomeError, formData.nome, formData.nome.trim().length >= 2)}
                       value={formData.nome}
                       onChange={(e) => handleInputChange("nome", e.target.value)}
                     />
-                    {nomeError && <p className="text-[9px] text-red-400 font-bold ml-1">Mínimo de 2 caracteres</p>}
+                    {nomeError && <p className="text-[10px] text-red-500 font-semibold mt-0.5 ml-4">Mínimo de 2 caracteres</p>}
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase tracking-wider text-zinc-300 font-bold">WhatsApp Corporativo *</label>
+                  <div className="relative">
+                    <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
                     <input
                       type="text"
-                      placeholder="Ex: (11) 99999-9999"
-                      autoComplete="off"
-                      className={getInputClass(phoneError, formData.telefone, isPhoneValid(formData.telefone))}
-                      value={formData.telefone}
-                      onChange={(e) => handleInputChange("telefone", formatarTelefone(e.target.value))}
-                    />
-                    {phoneError && <p className="text-[9px] text-red-400 font-bold ml-1">DDD + número inválido</p>}
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase tracking-wider text-zinc-300 font-bold">E-mail Corporativo *</label>
-                  <input
-                    type="email"
-                    placeholder="Ex: pedro@empresa.com"
-                    autoComplete="off"
-                    className={getInputClass(emailError, formData.email, isEmailValid(formData.email))}
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                  />
-                  {emailError && <p className="text-[9px] text-red-400 font-bold ml-1">E-mail inválido</p>}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase tracking-wider text-zinc-300 font-bold">Nome da Empresa *</label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Tech Co."
+                      placeholder="Empresa"
                       autoComplete="off"
                       className={getInputClass(empresaError, formData.empresa, formData.empresa.trim().length >= 2)}
                       value={formData.empresa}
                       onChange={(e) => handleInputChange("empresa", e.target.value)}
                     />
-                    {empresaError && <p className="text-[9px] text-red-400 font-bold ml-1">Mínimo de 2 caracteres</p>}
+                    {empresaError && <p className="text-[10px] text-red-500 font-semibold mt-0.5 ml-4">Mínimo de 2 caracteres</p>}
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[10px] uppercase tracking-wider text-zinc-300 font-bold">Seu Cargo *</label>
+                  <div className="relative">
+                    <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
                     <input
                       type="text"
-                      placeholder="Ex: Marketing, Diretoria ou Vendas"
+                      placeholder="Contato"
+                      autoComplete="off"
+                      className={getInputClass(phoneError, formData.telefone, isPhoneValid(formData.telefone))}
+                      value={formData.telefone}
+                      onChange={(e) => handleInputChange("telefone", formatarTelefone(e.target.value))}
+                    />
+                    {phoneError && <p className="text-[10px] text-red-500 font-semibold mt-0.5 ml-4">DDD + número inválido</p>}
+                  </div>
+
+                  <div className="relative">
+                    <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Cargo (ex: CEO, Comprador, Diretor)"
                       autoComplete="off"
                       className={getInputClass(cargoError, formData.cargo, formData.cargo.trim().length >= 2)}
                       value={formData.cargo}
                       onChange={(e) => handleInputChange("cargo", e.target.value)}
                     />
-                    {cargoError && <p className="text-[9px] text-red-400 font-bold ml-1">Mínimo de 2 caracteres</p>}
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-1">
-                <button
-                  onClick={() => {
-                    try {
-                      const saved = localStorage.getItem('octadesk_deepdive_leads');
-                      const leads = saved ? JSON.parse(saved) : [];
-                      const novoLead = {
-                        nome: formData.nome,
-                        whatsapp: formData.telefone,
-                        email: formData.email,
-                        empresa: formData.empresa,
-                        cargo: formData.cargo,
-                        data: new Date().toISOString()
-                      };
-                      leads.push(novoLead);
-                      localStorage.setItem('octadesk_deepdive_leads', JSON.stringify(leads));
-                    } catch (e) {
-                      console.error(e);
-                    }
-                    setStep(3);
-                  }}
-                  disabled={!isStep1Valid}
-                  className={`w-full py-2.5 rounded-xl font-bold transition-all text-xs flex items-center justify-center gap-1.5 ${
-                    isStep1Valid
-                      ? "bg-gradient-to-r from-[#00D1A0] to-[#00B58A] text-[#1F2538] hover:from-[#00E5BC] hover:to-[#00D1A0] active:scale-[0.98] shadow-md shadow-green-900/10 cursor-pointer"
-                      : "bg-[#252c3f] text-zinc-500 border border-zinc-700 cursor-not-allowed"
-                  }`}
-                >
-                  Avançar
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {step === 2 && (
-            <motion.div
-              key="diagnostico"
-              variants={slideVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="space-y-3"
-            >
-              <div className="space-y-1 text-center md:text-left">
-                <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#2d62ff] font-extrabold">
-                  Etapa 2: Diagnóstico
-                </span>
-                <h2 className="text-lg md:text-xl font-extrabold text-white leading-tight">
-                  Como está estruturada a sua operação hoje?
-                </h2>
-              </div>
-
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase tracking-wider text-zinc-300 font-bold block">
-                    Quantas mentes comandam o seu atendimento hoje?
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {['Eu + 1', '3 a 5', '6 a 15', 'Mais de 15'].map((opt) => {
-                      const isSelected = diagnosticoData.equipe === opt;
-                      return (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => handleDiagChange('equipe', opt)}
-                          className={`py-2 px-3 rounded-lg border text-center text-xs font-semibold transition-all cursor-pointer ${
-                            isSelected 
-                              ? "bg-[#2d62ff] border-[#2d62ff] text-white font-bold shadow-md shadow-blue-500/10"
-                              : "bg-[#1F2538] border-white/10 text-zinc-300 hover:bg-[#272F47]"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      );
-                    })}
+                    {cargoError && <p className="text-[10px] text-red-500 font-semibold mt-0.5 ml-4">Mínimo de 2 caracteres</p>}
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase tracking-wider text-zinc-300 font-bold block">
-                    Qual o volume mensal de vendas / notas fiscais?
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {['Até 100/mês', 'De 101 a 1000/mês', 'Mais de 1000/mês'].map((opt) => {
-                      const isSelected = diagnosticoData.volume === opt;
-                      return (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => handleDiagChange('volume', opt)}
-                          className={`py-2 px-3 rounded-lg border text-center text-xs font-semibold transition-all cursor-pointer ${
-                            isSelected 
-                              ? "bg-[#2d62ff] border-[#2d62ff] text-white font-bold shadow-md shadow-blue-500/10"
-                              : "bg-[#1F2538] border-white/10 text-zinc-300 hover:bg-[#272F47]"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      );
-                    })}
-                  </div>
+                <div className="pt-4">
+                  <button
+                    onClick={() => {
+                      setStartTime(Date.now());
+                      setCurrentQuestionIndex(0);
+                      setStep(2);
+                    }}
+                    disabled={!isStep1Valid}
+                    className={`w-full py-4 rounded-2xl font-black transition-all text-sm tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer ${
+                      isStep1Valid
+                        ? "bg-[#2D62FF] text-white hover:bg-[#1A4ED9] active:scale-[0.98] shadow-[0_12px_24px_rgba(45,98,255,0.18)]"
+                        : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                    }`}
+                  >
+                    Participe e descubra soluções!
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </button>
                 </div>
+              </motion.div>
+            )}
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] uppercase tracking-wider text-zinc-300 font-bold block">
-                    Por quais canais seus clientes chegam com mais frequência?
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {['WhatsApp', 'Instagram', 'E-mail', 'Chat no Site', 'Telefone'].map((opt) => {
-                      const isSelected = diagnosticoData.canais.includes(opt);
-                      return (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => toggleCanal(opt)}
-                          className={`px-3.5 py-1.5 rounded-full border text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                            isSelected 
-                              ? "bg-[#2d62ff] border-[#2d62ff] text-white font-bold shadow-md shadow-blue-500/10"
-                              : "bg-[#1F2538] border-white/10 text-zinc-300 hover:bg-[#272F47]"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-between">
-                <button
-                  onClick={() => setStep(1)}
-                  className="px-6 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 font-bold active:scale-[0.98] active:bg-[#1F2538] transition-all text-xs cursor-pointer"
-                >
-                  Voltar
-                </button>
-                <button
-                  onClick={() => {
-                    if (jornadaVersao === 'CONSULTIVA') {
-                      saveLeadDataAndTransition();
-                    } else {
-                      setStep(3);
-                    }
-                  }}
-                  disabled={!isStep2Valid}
-                  className={`px-8 py-2.5 rounded-xl font-bold transition-all text-xs flex items-center justify-center gap-1.5 ${
-                    isStep2Valid
-                      ? "bg-gradient-to-r from-[#00D1A0] to-[#00B58A] text-[#1F2538] hover:from-[#00E5BC] hover:to-[#00D1A0] active:scale-[0.98] shadow-md shadow-green-900/10 cursor-pointer"
-                      : "bg-[#252c3f] text-zinc-500 border border-zinc-700 cursor-not-allowed"
-                  }`}
-                >
-                  {jornadaVersao === 'CONSULTIVA' ? 'Concluir Diagnóstico' : 'Iniciar Desafio'}
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                  </svg>
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {step === 3 && currentQuestion && (
-            <motion.div
-              key={`quiz-question-${currentQuestionIndex}`}
-              variants={slideVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="space-y-3 relative"
-            >
-              <style>{`
-                @keyframes scanline {
-                  0% { top: 0%; opacity: 0; }
-                  10% { opacity: 1; }
-                  90% { opacity: 1; }
-                  100% { top: 100%; opacity: 0; }
-                }
-                .sonda-scanner {
-                  position: absolute;
-                  left: -20px;
-                  right: -20px;
-                  height: 2px;
-                  background: linear-gradient(90deg, transparent, rgba(45, 98, 255, 0.2), transparent);
-                  box-shadow: 0 0 12px rgba(45, 98, 255, 0.1);
-                  animation: scanline 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-                  pointer-events: none;
-                  z-index: 0;
-                }
-              `}</style>
-              <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl -mx-8 -my-8 px-8 py-8 z-0">
-                <div className="sonda-scanner" />
-              </div>
-
-              {currentQuestionIndex === 0 && (
-                <div className="pb-2 mb-2 border-b border-[#2d62ff]/20">
-                  <h3 className="text-center font-bold text-[#2d62ff] tracking-wider text-xs">
-                    &quot;Vamos avaliar as suas dores e mapear a inteligência do seu negócio.&quot;
-                  </h3>
-                </div>
-              )}
-
-              <div className="space-y-1 relative z-10">
-                <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#2d62ff] font-bold block">
-                  Desafio {currentQuestionIndex + 1} de {quizJourneyConfig.questions.length}
-                </span>
-                <h2 className="text-lg md:text-xl lg:text-2xl font-extrabold text-white leading-snug">
-                  {currentQuestion.question}
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-1 gap-2 relative z-10">
-                {currentQuestion.options.map((option, idx) => {
-                  const isSelected = selectedOptionText === option.text;
-                  const isIncorrect = isSelected && !option.isCorrect;
-                  const isCorrect = isSelected && option.isCorrect;
-
-                  let pillStyle = "border-white/10 bg-[#1F2538] text-white hover:bg-[#272F47] hover:border-white/20 active:scale-[0.98] transition-all duration-150 shadow-sm";
-                  if (isSelected) {
-                    if (isCorrect) {
-                      pillStyle = "border-[#114e0b] bg-[#cef5ca] text-[#114e0b] shadow-[0_0_15px_rgba(206,245,202,0.15)]";
-                    } else {
-                      pillStyle = "border-red-500 bg-[#f8e4e4] text-[#7f1d1d]";
-                    }
-                  }
-
-                  return (
-                    <div key={idx} className="flex flex-col gap-1.5">
-                       <button
-                        type="button"
-                        onClick={() => handleSelectQuizOption(option)}
-                        className={`w-full text-left py-3 px-4 rounded-xl border transition-all duration-200 cursor-pointer ${pillStyle}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs md:text-sm pr-4">{option.text}</span>
-                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-all ${
-                            isSelected && isCorrect ? "bg-[#114e0b] border-transparent text-[#cef5ca]" :
-                            isSelected && isIncorrect ? "bg-[#7f1d1d] border-transparent text-[#f8e4e4]" :
-                            "border-zinc-500 bg-transparent"
-                          }`}>
-                            {isSelected && (isCorrect || isIncorrect) && (
-                              <span className="text-[10px] font-black">{isCorrect ? "✓" : "✗"}</span>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                      {isIncorrect && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="p-3 bg-[#f8e4e4] border border-red-500/20 text-[#7f1d1d] text-xs mt-0.5 leading-relaxed shadow-sm"
-                        >
-                          <strong>Explicação:</strong> {option.feedback}
-                        </motion.div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="flex justify-between items-center pt-3 border-t border-[#2d62ff]/10 relative z-10 mt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (currentQuestionIndex > 0) {
-                      setCurrentQuestionIndex((prev) => prev - 1);
-                      setSelectedOptionText(null);
-                      setHasErroredOnCurrentQuestion(false);
-                      setHasClickedCurrentQuestion(false);
-                    } else {
-                      setStep(1);
-                    }
-                  }}
-                  className="px-6 py-2.5 rounded-xl border border-zinc-700 text-zinc-300 font-bold active:scale-[0.98] active:bg-[#1F2538] transition-all text-xs cursor-pointer"
-                >
-                  Voltar
-                </button>
-                
-                <div className="text-xs text-[#2d62ff] font-mono font-bold">
-                  Pontos: {score}/{quizJourneyConfig.questions.length}
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          {step === 4 && (
-            <motion.div
-              key="loading"
-              variants={slideVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className="text-center py-8 space-y-6 flex flex-col items-center justify-center min-h-[280px]"
-            >
-              <div className="flex items-center justify-center mb-2">
-                <Image 
-                  src="/assets/octadesk-octopus-white.svg" 
-                  alt="Octadesk Octopus" 
-                  width={40} 
-                  height={40} 
-                  className="h-10 w-10 mx-auto select-none animate-pulse"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <h3 className="text-lg font-black text-white tracking-tight uppercase">
-                  {getLoadingHeading(progress)}
-                </h3>
-                <p className="text-xs text-zinc-300 max-w-xs mx-auto leading-relaxed">
-                  {getLoadingMessage(progress)}
-                </p>
-              </div>
-
-              <div className="w-full max-w-xs bg-[#1F2538] rounded-full h-2 border border-white/10 overflow-hidden relative shadow-inner">
-                <motion.div
-                  className="h-full bg-[#2d62ff]"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-
-              <span className="font-mono text-[10px] text-[#2d62ff] tracking-widest uppercase font-bold">
-                {Math.round(progress)}% Processado
-              </span>
-            </motion.div>
-          )}
-
-          {step === 5 && computedResult && (() => {
-            const isMax = computedResult.prejuizoOperacional === 0;
-            const isMod = computedResult.prejuizoOperacional > 0 && computedResult.score >= 3;
-            
-            let title = "";
-            let message = "";
-            let recommendation = "";
-            let ctaText = "";
-            let titleClass = "";
-            let badgeClass = "";
-            
-            if (isMax) {
-              title = `🏆 PARABÉNS, ${(formData.nome || "VISITANTE").toUpperCase()}!`;
-              message = `A ${formData.empresa || "sua empresa"} opera no topo do mercado com R$ 0 de prejuízo. Que tal escalar esses resultados com uma parceria estratégica exclusiva?`;
-              recommendation = "Parceria Estratégica com a Octadesk";
-              ctaText = "Firmar Parceria com Octadesk 🚀";
-              titleClass = "bg-gradient-to-r from-yellow-400 to-amber-300 bg-clip-text text-transparent";
-              badgeClass = "text-yellow-400 bg-yellow-400/10 border-yellow-400/25";
-            } else if (isMod) {
-              title = "DIAGNÓSTICO DE EFICIÊNCIA CONCLUÍDO";
-              message = `${formData.nome || "Visitante"}, identificamos pontos cegos na ${formData.empresa || "sua empresa"}. Vamos otimizar sua margem?`;
-              recommendation = TOOLS_CONFIG[computedResult.prioridadeFerramenta].name;
-              ctaText = "Otimizar Canais Operacionais 📈";
-              titleClass = "text-white";
-              badgeClass = "text-[#00D1A0] bg-[#00D1A0]/10 border-[#00D1A0]/20";
-            } else {
-              title = "DIAGNÓSTICO DE EFICIÊNCIA CONCLUÍDO";
-              message = `${formData.nome || "Visitante"}, a ${formData.empresa || "sua empresa"} está deixando dinheiro na mesa. Ative o plano de resgate imediato.`;
-              recommendation = TOOLS_CONFIG[computedResult.prioridadeFerramenta].name;
-              ctaText = "Iniciar Plano de Resgate 🚨";
-              titleClass = "text-red-400";
-              badgeClass = "text-red-400 bg-red-400/10 border-red-400/20";
-            }
-
-            return (
+            {/* STEP 2: PERGUNTA 1 - DOR PRINCIPAL */}
+            {step === 2 && (
               <motion.div
-                key="success"
-                initial="hidden"
-                animate="visible"
+                key="dor-principal"
+                variants={slideVariants}
+                initial="initial"
+                animate="animate"
                 exit="exit"
-                variants={{
-                  hidden: { opacity: 0, y: 15 },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    transition: {
-                      duration: 0.4,
-                      staggerChildren: 0.12,
-                      delayChildren: 0.1
-                    }
-                  },
-                  exit: { opacity: 0, y: -15, transition: { duration: 0.25 } }
-                }}
-                className="text-center space-y-2 py-0.5 flex flex-col items-center w-full max-w-2xl mx-auto"
+                className="py-6 flex flex-col justify-between flex-1 h-full w-full max-w-md mx-auto"
               >
-                <motion.div
-                  variants={{
-                    hidden: { opacity: 0, y: -15 },
-                    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
-                  }}
-                  className="space-y-1 flex flex-col items-center"
+                <div>
+                  {renderProgressHeader(1)}
+                  <div className="space-y-2 text-center mt-2">
+                    <h2 className="text-xl font-black text-[#1F2538] leading-tight">
+                      Qual situação mais acontece na sua operação hoje?
+                    </h2>
+                    <p className="text-slate-500 text-xs font-semibold">{getSubheading(1)}</p>
+                  </div>
+                </div>
+
+                <motion.div 
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="space-y-3.5 flex flex-col my-auto py-6"
                 >
-                  <div className="flex items-center justify-center mb-2">
-                    <Image
-                      src="/assets/octadesk-octopus-white.svg"
-                      alt="Octadesk"
-                      width={40}
-                      height={40}
-                      className="h-10 w-10 mx-auto select-none animate-pulse"
+                  {quizJourneyConfig.questions[0].options.map((option, index) => {
+                    const letter = String.fromCharCode(65 + index);
+                    return (
+                      <motion.button
+                        variants={itemVariants}
+                        key={option.value}
+                        type="button"
+                        onClick={() => handleSelectOption(option.value)}
+                        className="w-full text-left py-4 px-5 rounded-2xl border border-slate-200 bg-white text-[#1F2538] hover:bg-slate-50 hover:border-blue-400/50 active:scale-[0.98] transition-all duration-150 flex items-center gap-4 text-xs md:text-sm font-bold cursor-pointer shadow-[0_4px_12px_rgba(31,41,55,0.03)]"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-[#2D62FF] text-white flex items-center justify-center font-black text-xs shrink-0 select-none shadow-sm">
+                          {letter}
+                        </div>
+                        <span className="flex-1 leading-tight">{option.text}</span>
+                      </motion.button>
+                    );
+                  })}
+                </motion.div>
+
+                <div className="pt-2 flex justify-start">
+                  <button
+                    onClick={() => setStep(1)}
+                    className="px-8 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50 active:scale-[0.98] transition-all text-xs cursor-pointer"
+                  >
+                    Voltar
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* STEP 3: QUALIFICAÇÃO DO LEAD (P2 A P4) */}
+            {step === 3 && activeQuestion && (
+              <motion.div
+                key={`question-${activeQuestion.id}`}
+                variants={slideVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="py-6 flex flex-col justify-between flex-1 h-full w-full max-w-md mx-auto"
+              >
+                <div>
+                  {renderProgressHeader(currentQuestionIndex + 1)}
+                  <div className="space-y-2 text-center mt-2">
+                    <h2 className="text-xl font-black text-[#1F2538] leading-tight">
+                      {activeQuestion.question}
+                    </h2>
+                    <p className="text-slate-500 text-xs font-semibold">{getSubheading(activeQuestion.id)}</p>
+                  </div>
+                </div>
+
+                <motion.div 
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="space-y-3.5 flex flex-col my-auto py-6"
+                >
+                  {activeQuestion.options.map((option, index) => {
+                    const letter = String.fromCharCode(65 + index);
+                    return (
+                      <motion.button
+                        variants={itemVariants}
+                        key={option.value}
+                        type="button"
+                        onClick={() => handleSelectOption(option.value)}
+                        className="w-full text-left py-4 px-5 rounded-2xl border border-slate-200 bg-white text-[#1F2538] hover:bg-slate-50 hover:border-blue-400/50 active:scale-[0.98] transition-all duration-150 flex items-center gap-4 text-xs md:text-sm font-bold cursor-pointer shadow-[0_4px_12px_rgba(31,41,55,0.03)]"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-[#2D62FF] text-white flex items-center justify-center font-black text-xs shrink-0 select-none shadow-sm">
+                          {letter}
+                        </div>
+                        <span className="flex-1 leading-tight">{option.text}</span>
+                      </motion.button>
+                    );
+                  })}
+                </motion.div>
+
+                <div className="pt-2 flex justify-start">
+                  <button
+                    onClick={() => {
+                      if (currentQuestionIndex > 1) {
+                        setCurrentQuestionIndex((prev) => prev - 1);
+                      } else {
+                        setStep(2);
+                        setCurrentQuestionIndex(0);
+                      }
+                    }}
+                    className="px-8 py-3 rounded-2xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50 active:scale-[0.98] transition-all text-xs cursor-pointer"
+                  >
+                    Voltar
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* STEP 4: PROCESSING / LOADING */}
+            {step === 4 && (
+              <motion.div
+                key="loading"
+                variants={slideVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className="py-10 text-center flex flex-col justify-between items-center flex-1 h-full w-full max-w-md mx-auto"
+              >
+                {/* dynamic thinking Octopus Mascot */}
+                <div className="relative w-36 h-36 bg-slate-50/50 rounded-[32px] flex items-center justify-center border border-slate-100 p-2 my-2 shadow-[0_16px_36px_rgba(31,41,55,0.05)]">
+                  <OctoMascot state={polvoState} size={120} />
+                </div>
+
+                <div className="space-y-3 my-auto py-4">
+                  <h3 className="text-xl font-black text-[#1F2538] uppercase tracking-wide">
+                    Processando Informações
+                  </h3>
+                  <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+                    Consolidando as respostas para estruturar as recomendações ideais...
+                  </p>
+                </div>
+
+                <div className="w-full max-w-xs flex flex-col items-center gap-y-3 mt-4">
+                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200/65 relative">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-[#2D62FF] to-blue-400"
+                      style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <h1 className={`text-lg md:text-xl font-black tracking-tight leading-tight uppercase ${titleClass}`}>
-                    {title}
+                  <span className="font-mono text-xs text-[#2D62FF] tracking-wider font-extrabold">
+                    {Math.round(progress)}% Processado
+                  </span>
+                </div>
+              </motion.div>
+            )}
+
+            {/* STEP 5: TELA DE DIRECIONAMENTO (RESULTADO RECOMENDADO) */}
+            {step === 5 && computedResult && (
+              <motion.div
+                key="direccionamento"
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                exit="exit"
+                className="py-10 text-center flex flex-col justify-between items-center w-full flex-1 max-w-md mx-auto"
+              >
+                <motion.div variants={itemVariants} className="space-y-2 text-center flex flex-col items-center w-full">
+                  <p className={`text-xs font-bold uppercase tracking-wider ${currentTheme.textColorClass === 'text-white' ? 'text-white/80' : 'text-slate-500'}`}>
+                    Obrigado pela sua participação!
+                  </p>
+                  {computedResult.isDecisor && (
+                    <motion.div
+                      animate={{ scale: [1, 1.04, 1] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                      className="bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black text-[9px] tracking-[0.2em] uppercase px-5 py-1.5 rounded-full border border-pink-400/30 shadow-[0_4px_16px_rgba(236,72,153,0.35)] my-1 shrink-0 select-none"
+                    >
+                      ★ CLIENTE FOCO • ABORDAGEM IMEDIATA ★
+                    </motion.div>
+                  )}
+                  <span className={`text-[10px] font-black uppercase tracking-[0.3em] px-4.5 py-2 rounded-full ${currentTheme.pillClass}`}>
+                    Comece pela Etapa {computedResult.etapaRecomendada.numero}
+                  </span>
+                  <h2 className={`text-2xl md:text-3xl font-black leading-tight pt-1.5 tracking-wide drop-shadow-sm w-full truncate ${currentTheme.textColorClass}`}>
+                    {computedResult.etapaRecomendada.nome}
+                  </h2>
+                </motion.div>
+
+                {/* Box de Recomendação com Splash Art / Glassmorphism */}
+                <motion.div variants={itemVariants} className={`w-full rounded-[32px] p-6 flex flex-col items-center justify-center space-y-4 shadow-[0_16px_36px_rgba(31,41,55,0.06)] ${currentTheme.cardBgClass} my-auto`}>
+                  <motion.div 
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                    className="relative w-28 h-28 flex items-center justify-center bg-white rounded-full shadow-md border border-slate-100 transform scale-105 p-4"
+                  >
+                    <div 
+                      className="w-full h-full text-[#2D62FF] flex items-center justify-center [&>svg]:w-full [&>svg]:h-full" 
+                      dangerouslySetInnerHTML={{ __html: ETAPAS_PAREDE[computedResult.dorValue]?.iconSvg || "" }} 
+                    />
+                  </motion.div>
+                  <p className={`text-xs md:text-sm leading-relaxed max-w-xs font-medium pt-1 text-center ${currentTheme.textColorClass === 'text-white' ? 'text-white/95' : 'text-slate-650'}`}>
+                    {ETAPAS_PAREDE[computedResult.dorValue]?.description}
+                  </p>
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="w-full mt-4">
+                  <button
+                    onClick={handleReset}
+                    className={`w-full py-4 rounded-2xl font-black transition-all text-xs tracking-wider uppercase active:scale-[0.98] cursor-pointer block text-center shadow-md ${currentTheme.textColorClass === 'text-white' ? 'bg-white text-[#1F2538] hover:bg-slate-50' : 'bg-[#2D62FF] text-white hover:bg-[#1A4ED9]'}`}
+                  >
+                    Novo Diagnóstico
+                  </button>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* STEP 6: RELATÓRIO DO PARTICIPANTE (COM ALERTA COMERCIAL) */}
+            {step === 6 && computedResult && (
+              <motion.div
+                key="relatorio"
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                exit="exit"
+                className="py-4 flex flex-col justify-between flex-1 h-full w-full max-w-md mx-auto"
+              >
+                <motion.div variants={itemVariants} className="space-y-1 text-center flex flex-col items-center">
+                  {computedResult.isDecisor && (
+                    <motion.span 
+                      animate={{ scale: [1, 1.03, 1] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                      className="inline-block text-[10px] font-black uppercase tracking-[0.2em] text-white bg-gradient-to-r from-pink-500 to-rose-600 border border-pink-400 px-4.5 py-1.5 rounded-full w-fit mx-auto shadow-[0_0_15px_rgba(236,72,153,0.3)] mb-1.5 select-none"
+                    >
+                      ★ CLIENTE FOCO • ABORDAGEM IMEDIATA ★
+                    </motion.span>
+                  )}
+                  <h2 className={`text-lg font-extrabold leading-tight ${currentTheme.textColorClass}`}>
+                    Resumo do seu Diagnóstico
+                  </h2>
+                </motion.div>
+
+                {/* Ficha Técnica de Respostas compactada para não precisar de scroll */}
+                <motion.div 
+                  variants={itemVariants}
+                  className={`border rounded-2xl p-3.5 space-y-2.5 text-xs transition-colors ${
+                    currentTheme.textColorClass === 'text-white'
+                      ? 'bg-white/10 border-white/20 text-white'
+                      : computedResult.isDecisor
+                        ? 'bg-pink-50/50 border border-pink-200 text-[#1F2538] shadow-sm'
+                        : 'bg-slate-50 border-slate-200 text-[#1F2538]'
+                  }`}
+                >
+                  {/* Dor Principal */}
+                  <div className="space-y-0.5">
+                    <span className={`font-bold block uppercase text-[8px] tracking-wider ${currentTheme.textColorClass === 'text-white' ? 'text-white/60' : 'text-slate-400'}`}>
+                      Seu maior desafio atual ({obterLetraOpcao(0, computedResult.dorValue)})
+                    </span>
+                    <div className={`p-2 rounded-xl font-medium text-[11px] leading-snug border ${currentTheme.textColorClass === 'text-white' ? 'bg-white/10 border-white/10 text-white' : 'bg-white border-slate-100 text-slate-700'}`}>
+                      {computedResult.dorPrincipal}
+                    </div>
+                  </div>
+
+                  {/* Tamanho da Empresa e Volume Diário */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="space-y-0.5">
+                      <span className={`font-bold block uppercase text-[8px] tracking-wider ${currentTheme.textColorClass === 'text-white' ? 'text-white/60' : 'text-slate-400'}`}>Tamanho da equipe</span>
+                      <div className={`p-2 rounded-xl text-[11px] flex flex-col gap-1 min-h-[52px] justify-between border ${currentTheme.textColorClass === 'text-white' ? 'bg-white/10 border-white/10 text-white' : 'bg-white border-slate-100 text-slate-700'}`}>
+                        <div>
+                          <span className={`text-[9px] block ${currentTheme.textColorClass === 'text-white' ? 'text-white/70' : 'text-slate-500'}`}>Colaboradores:</span>
+                          <span className={`font-extrabold text-[11px] leading-tight block ${currentTheme.textColorClass === 'text-white' ? 'text-white' : 'text-slate-900'}`}>{computedResult.tamanhoEmpresa}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-0.5">
+                      <span className={`font-bold block uppercase text-[8px] tracking-wider ${currentTheme.textColorClass === 'text-white' ? 'text-white/60' : 'text-slate-400'}`}>Atendimentos diários</span>
+                      <div className={`p-2 rounded-xl text-[11px] flex flex-col gap-1 min-h-[52px] justify-between border ${currentTheme.textColorClass === 'text-white' ? 'bg-white/10 border-white/10 text-white' : 'bg-white border-slate-100 text-slate-700'}`}>
+                        <div>
+                          <span className={`text-[9px] block ${currentTheme.textColorClass === 'text-white' ? 'text-white/70' : 'text-slate-500'}`}>Atendimentos/dia:</span>
+                          <span className={`font-extrabold text-[11px] leading-tight block ${currentTheme.textColorClass === 'text-white' ? 'text-white' : 'text-slate-900'}`}>{computedResult.volumeAtendimentos}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Plataforma */}
+                  <div className="space-y-0.5">
+                    <span className={`font-bold block uppercase text-[8px] tracking-wider ${currentTheme.textColorClass === 'text-white' ? 'text-white/60' : 'text-slate-400'}`}>Plataforma de e-commerce</span>
+                    <div className={`p-2 rounded-xl text-[11px] flex flex-col gap-0.5 border ${currentTheme.textColorClass === 'text-white' ? 'bg-white/10 border-white/10 text-white' : 'bg-white border-slate-100 text-slate-700'}`}>
+                      <span className="font-extrabold">{computedResult.plataforma}</span>
+                    </div>
+                  </div>
+
+                  {/* Ponto de Entrada */}
+                  <div className="space-y-0.5">
+                    <span className={`font-bold block uppercase text-[8px] tracking-wider ${currentTheme.textColorClass === 'text-white' ? 'text-white/60' : 'text-slate-400'}`}>Direcionamento recomendado</span>
+                    <div className={`p-2 rounded-xl text-center flex flex-col items-center justify-center border ${currentTheme.textColorClass === 'text-white' ? 'bg-white/20 border-white/20' : 'bg-blue-50/50 border-blue-200/60'}`}>
+                      <span className={`text-[9px] font-extrabold uppercase tracking-widest ${currentTheme.textColorClass === 'text-white' ? 'text-white' : 'text-[#2D62FF]'}`}>
+                        Etapa {computedResult.etapaRecomendada.numero}
+                      </span>
+                      <span className={`text-sm font-black ${currentTheme.textColorClass === 'text-white' ? 'text-white' : 'text-[#1F2538]'}`}>
+                        {computedResult.etapaRecomendada.nome}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="pt-0.5 space-y-2">
+                  <button
+                    onClick={() => setStep(7)}
+                    className={`w-full py-3.5 text-xs md:text-sm font-black rounded-2xl tracking-wider uppercase active:scale-[0.96] transition-all duration-200 cursor-pointer block text-center shadow-md ${currentTheme.textColorClass === 'text-white' ? 'bg-white text-[#1F2538] hover:bg-slate-50' : 'bg-[#1F2538] text-white hover:bg-[#2C3647]'}`}
+                  >
+                    Concluir Diagnóstico
+                  </button>
+
+                  {/* Assinatura Corporativa */}
+                  <div className="flex items-center justify-center gap-1.5 opacity-65 scale-90 mt-1">
+                    <Image 
+                      src={currentTheme.logoType === 'white' ? "/assets/octadesk-squircle-white.svg" : "/assets/octadesk-squircle.svg?v=2"} 
+                      alt="Octadesk Logo" 
+                      width={16} 
+                      height={16} 
+                      className="h-4 w-4 select-none"
+                    />
+                    <span className={`text-[9px] font-bold uppercase tracking-wider ${currentTheme.textColorClass === 'text-white' ? 'text-white/60' : 'text-slate-500'}`}>
+                      Plataforma Oficial Octadesk
+                    </span>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* STEP 7: OBRIGADO! */}
+            {step === 7 && (
+              <motion.div
+                key="obrigado"
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                exit="exit"
+                className="py-10 text-center flex flex-col justify-between items-center flex-1 h-full w-full max-w-md mx-auto relative"
+              >
+                {/* Ambient Glows */}
+                <div className={`absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl pointer-events-none z-0 animate-pulse-slow ${currentTheme.textColorClass === 'text-white' ? 'bg-[#2D62FF]/15' : 'bg-[#2D62FF]/5'}`} />
+
+                {/* Logo Oficial Squircle/Polvo da Octadesk */}
+                <motion.div 
+                  variants={itemVariants}
+                  className="relative z-10 my-2"
+                >
+                  <motion.div 
+                    className={`relative w-36 h-36 rounded-[32px] flex items-center justify-center shadow-inner p-2 border ${currentTheme.textColorClass === 'text-white' ? 'bg-white/10 border-white/10' : 'bg-blue-50/50 border-blue-100/50'}`}
+                  >
+                    {/* Glowing ring */}
+                    <div className={`absolute inset-0 rounded-[32px] blur-lg opacity-80 animate-pulse-slow ${currentTheme.textColorClass === 'text-white' ? 'bg-[#2D62FF]/20' : 'bg-[#2D62FF]/5'}`} />
+                    <OctoMascot state={polvoState} size={120} className="relative z-10" />
+                  </motion.div>
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="space-y-3 relative z-10 my-auto py-4">
+                  <h1 className={`text-3xl font-black tracking-wider ${currentTheme.textColorClass}`}>
+                    OBRIGADO!
                   </h1>
-                  {!isMax && (
-                    <>
-                      <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
-                        Recomendação Estratégica
-                      </p>
-                      <h2 className={`text-xs md:text-sm font-extrabold tracking-tight uppercase px-3 py-1 rounded-full border shadow-sm ${badgeClass}`}>
-                        {recommendation}
-                      </h2>
-                    </>
+                  <p className={`text-xs md:text-sm max-w-xs mx-auto leading-relaxed ${currentTheme.textColorClass === 'text-white' ? 'text-slate-300' : 'text-slate-500'}`}>
+                    Seu diagnóstico foi concluído com sucesso.
+                  </p>
+                  {computedResult?.isDecisor && (
+                    <motion.div
+                      animate={{ scale: [1, 1.05, 1] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                      className="bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black text-[9px] tracking-[0.25em] uppercase px-5 py-2 rounded-full border border-pink-400/30 shadow-[0_4px_16px_rgba(236,72,153,0.4)] mt-3 mx-auto w-fit select-none"
+                    >
+                      ★ ABORDAGEM IMEDIATA ★
+                    </motion.div>
                   )}
                 </motion.div>
 
-                <motion.div
-                  variants={{
-                    hidden: { opacity: 0, scale: 0.97 },
-                    visible: { opacity: 1, scale: 1, transition: { duration: 0.4 } }
-                  }}
-                  className="w-full grid grid-cols-1 md:grid-cols-2 gap-3"
-                >
-                  <div className={`bg-[#1F2538]/60 border rounded-2xl py-2.5 px-4 flex flex-col justify-between items-center space-y-1 text-center shadow-lg relative overflow-hidden backdrop-blur-md max-h-[130px] ${isMax ? 'border-emerald-500/25' : 'border-red-500/25'}`}>
-                    <div className={`absolute top-0 left-0 w-full h-[3px] ${isMax ? 'bg-emerald-500/50' : 'bg-red-500/50'}`} />
-                    <span className={`text-[10px] font-bold uppercase tracking-wider ${isMax ? 'text-emerald-400' : 'text-red-400'}`}>Vazamento Financeiro</span>
-                    <span className={`text-xl md:text-2xl font-black tracking-tight my-0.5 ${isMax ? 'text-emerald-400' : 'text-red-500'}`}>
-                      R$ {((computedResult.prejuizoOperacional || 0) * 1250).toLocaleString('pt-BR')}/mês
-                    </span>
-                    <span className="text-[10px] text-zinc-400 leading-normal">desperdício operacional acumulado</span>
-                    <span className={`text-[10px] font-black px-3 py-0.5 rounded-full uppercase border mt-1 ${
-                      isMax
-                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                        : computedResult.prejuizoOperacional > 10
-                          ? "bg-red-500/20 text-red-400 border-red-500/30"
-                          : computedResult.prejuizoOperacional > 5
-                            ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-                            : "bg-green-500/20 text-green-400 border-green-500/30"
-                    }`}>
-                      Risco {isMax ? 'Zero' : computedResult.prejuizoOperacional > 10 ? 'Crítico' : computedResult.prejuizoOperacional > 5 ? 'Médio' : 'Baixo'}
-                    </span>
-                  </div>
+                {/* Badge com Logo Octadesk */}
+                <div className="w-full flex flex-col items-center gap-y-4 relative z-10">
+                  <motion.div variants={itemVariants} className={`border rounded-2xl py-3.5 px-10 flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-sm ${currentTheme.textColorClass === 'text-white' ? 'bg-[#2C3647]/80 border-slate-700/50' : 'bg-white border-slate-200'}`}>
+                    <Image 
+                      src={currentTheme.logoType === 'white' ? "/assets/octadesk-logo-white.svg" : "/assets/octadesk-logo.svg"} 
+                      alt="Octadesk" 
+                      width={100} 
+                      height={22} 
+                      className="h-5.5 w-auto select-none"
+                      priority 
+                    />
+                  </motion.div>
 
-                  <div className="bg-[#1F2538]/60 border border-white/10 rounded-2xl py-2.5 px-4 flex flex-col justify-between space-y-2 shadow-lg backdrop-blur-md max-h-[130px]">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-300 text-center">Desempenho por Pilar</span>
-                    <div className="space-y-1 text-left">
-                      {[
-                        { label: "Atendimento (FAQ)", key: 'faq' },
-                        { label: "Automação de Vendas", key: 'sales' },
-                        { label: "Status de Pedidos", key: 'info' },
-                        { label: "Carrinho Abandonado", key: 'cart' },
-                      ].map((item) => {
-                        const scoreVal = computedResult.toolScores[item.key as keyof typeof computedResult.toolScores] || 0;
-                        const isWinner = computedResult.prioridadeFerramenta === item.key;
-                        return (
-                          <div key={item.key} className="space-y-0.5">
-                            <div className="flex justify-between text-[10px] font-bold">
-                              <span className={isWinner ? "text-[#00D1A0]" : "text-zinc-300"}>
-                                {isWinner ? "★ " : ""}{item.label}
-                              </span>
-                              <span className="font-mono text-zinc-400">{scoreVal} pts</span>
-                            </div>
-                            <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${Math.min((scoreVal / 6) * 100, 100)}%` }}
-                                transition={{ duration: 0.8, ease: "easeOut" }}
-                                className={`h-full rounded-full ${isWinner ? 'bg-[#00D1A0]' : 'bg-blue-500/50'}`}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </motion.div>
-
-              {!isMax && (
-                <motion.div
-                  variants={{
-                    hidden: { opacity: 0, y: 10 },
-                    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
-                  }}
-                  className="w-full max-w-xl bg-[#1F2538]/60 border border-white/10 rounded-2xl py-2 px-4 shadow-xl text-center backdrop-blur-md relative"
-                >
-                  <p className="text-xs md:text-sm text-zinc-200 leading-relaxed font-semibold">
-                    {message}
-                  </p>
-                </motion.div>
-              )}
-
-              <motion.div
-                variants={{
-                  hidden: { opacity: 0, y: 10 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
-                }}
-                className="w-full max-w-md pt-0.5"
-              >
-                <button
-                  onClick={handleReset}
-                  className="w-full py-3 text-xs md:text-sm font-black rounded-xl tracking-wider uppercase bg-gradient-to-r from-[#00D1A0] to-[#00B58A] text-[#1F2538] hover:from-[#00E5BC] hover:to-[#00D1A0] active:scale-[0.96] shadow-xl shadow-green-950/20 hover:shadow-green-900/30 transition-all duration-200 cursor-pointer block text-center"
-                >
-                  {ctaText}
-                </button>
+                  {/* Indicador de Auto-redirect */}
+                  <motion.div variants={itemVariants} className={`pt-1.5 flex items-center gap-2 text-[9px] font-mono tracking-wider justify-center ${currentTheme.textColorClass === 'text-white' ? 'text-slate-300' : 'text-slate-500'}`}>
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                    Retornando ao início...
+                  </motion.div>
+                </div>
               </motion.div>
-            </motion.div>
-            );
-          })()}
-        </AnimatePresence>
+            )}
+          </AnimatePresence>
 
-        <div className="mt-3 pt-2 border-t border-white/5 w-full flex flex-wrap justify-center gap-1 z-20">
-           <span className="text-[9px] uppercase font-bold tracking-widest text-zinc-450 block w-full text-center mb-0.5">
-             Depuração: Navegação Livre entre Telas
-           </span>
-           {[
-             { label: "0: Recepção", val: 0 },
-             { label: "1: Cadastro", val: 1 },
-             { label: "2: Diagnóstico", val: 2 },
-             { label: "3: Quiz", val: 3 },
-             { label: "4: Processando", val: 4 },
-             { label: "5: Veredito", val: 5 }
-           ].map((item) => (
-             <button
-               key={item.val}
-               type="button"
-                onClick={() => {
-                  if (item.val === 5) {
-                    seedRandomResult();
-                  } else if (item.val === 4) {
-                    setComputedResult(null);
-                  }
-                  setStep(item.val);
-                }}
-               className={`py-1 px-2 rounded text-[9px] font-bold transition-all cursor-pointer ${
-                 step === item.val
-                   ? "bg-[#00D1A0] text-[#1F2538] shadow-sm"
-                   : "bg-[#1F2538] text-zinc-300 hover:bg-[#272F47] border border-zinc-700"
-               }`}
-             >
-               {item.label}
-             </button>
-           ))}
-         </div>
+          {/* Footer Graphic with 3 Icons Connected by a dashed line */}
+          {(step >= 1 && step <= 5) && (
+            <div className={`w-full flex flex-col items-center justify-center mt-3 pt-3 border-t select-none shrink-0 relative z-10 ${isDarkStep ? 'border-white/10' : 'border-slate-100/50'}`}>
+              <div className="flex items-center justify-between w-full max-w-[240px] relative px-2">
+                {/* Dashed Line */}
+                <div className={`absolute top-1/2 left-6 right-6 h-[2px] border-t-2 border-dashed -translate-y-1/2 z-0 ${isDarkStep ? 'border-white/20' : 'border-blue-400/40'}`} />
+                
+                {/* Icon 1: Speech Bubble */}
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center relative z-10 shadow-sm ${isDarkStep ? 'bg-white/10 border border-white/10 text-white' : 'bg-blue-50 border border-blue-100/60 text-[#2D62FF]'}`}>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd" />
+                  </svg>
+                </div>
 
+                {/* Icon 2: Branching Diagram */}
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center relative z-10 shadow-sm ${isDarkStep ? 'bg-white/10 border border-white/10 text-white' : 'bg-blue-50 border border-blue-100/60 text-[#2D62FF]'}`}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.667v-3.5a2 2 0 00-2-2h-3.667v-3.5a2 2 0 00-2-2H5.667m0 0l2 2m-2-2l2-2" />
+                    <circle cx="18" cy="18.667" r="1.5" fill="currentColor" />
+                    <circle cx="5.667" cy="7.667" r="1.5" fill="currentColor" />
+                    <circle cx="12.333" cy="13.167" r="1.5" fill="currentColor" />
+                  </svg>
+                </div>
+
+                {/* Icon 3: Chatbot Face */}
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center relative z-10 shadow-sm ${isDarkStep ? 'bg-white/10 border border-white/10 text-white' : 'bg-blue-50 border border-blue-100/60 text-[#2D62FF]'}`}>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <rect x="3" y="6" width="18" height="12" rx="3" />
+                    <circle cx="8" cy="12" r="1.5" fill="currentColor" />
+                    <circle cx="16" cy="12" r="1.5" fill="currentColor" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 15h.01" />
+                    <path d="M12 6V3" strokeLinecap="round" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Network and Sync Status Badge */}
+          <div
+            className={`absolute bottom-3.5 left-3.5 z-30 select-none flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-bold border transition-all duration-300 backdrop-blur-sm shadow-sm ${
+              isDarkStep
+                ? "bg-white/5 border-white/10 text-white/70"
+                : "bg-slate-50/80 border-slate-200/60 text-slate-500"
+            }`}
+          >
+            <span className="relative flex h-2 w-2">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                isOnline ? "bg-emerald-400" : "bg-amber-400"
+              }`}></span>
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                isOnline ? "bg-emerald-500" : "bg-amber-500"
+              }`}></span>
+            </span>
+            <span>
+              {isOnline
+                ? pendingSyncCount > 0
+                  ? `Sincronizando (${pendingSyncCount})`
+                  : "Online"
+                : pendingSyncCount > 0
+                ? `Fila Offline (${pendingSyncCount})`
+                : "Offline"}
+            </span>
+          </div>
+
+          {/* Discrete Dashboard/Settings trigger inside the Kiosk Viewport */}
+          <button
+            onClick={() => setIsAdminOpen(true)}
+            className={`absolute bottom-3.5 right-3.5 w-8 h-8 rounded-full flex items-center justify-center text-xs shadow-sm z-30 transition-all cursor-pointer select-none border ${
+              isDarkStep 
+                ? "bg-white/10 hover:bg-white/25 border-white/10 text-white/50 hover:text-white/80" 
+                : "bg-slate-100/50 hover:bg-slate-200/80 border-slate-200/40 text-slate-400 hover:text-slate-650"
+            }`}
+            title="Painel de Controle (Dashboard)"
+          >
+            ⚙️
+          </button>
+        </div>
       </div>
 
-      <footer className="absolute bottom-2 left-0 right-0 mx-auto w-full text-center z-30">
-      </footer>
+      {/* 4. Barra de Depuração no Rodapé (Navegação Livre e Debug rápido para promotores) */}
+      {process.env.NODE_ENV !== 'production' && isDevHubVisible && (
+        <div className="fixed bottom-16 right-4 max-w-[400px] flex flex-wrap justify-center gap-1.5 z-40 bg-white/95 border border-slate-200 rounded-2xl p-3 shadow-lg px-4">
+          <span className="text-[8px] uppercase font-bold tracking-widest text-slate-400 block w-full text-center mb-0.5">
+            Depuração Stand: Ir para Etapa
+          </span>
+          {[
+            { label: "1: Cadastro", stepVal: 1, indexVal: 0 },
+            { label: "2: Dor (P1)", stepVal: 2, indexVal: 0 },
+            { label: "3: Porte (P2)", stepVal: 3, indexVal: 1 },
+            { label: "4: Vol. (P3)", stepVal: 3, indexVal: 2 },
+            { label: "5: Plat. (P4)", stepVal: 3, indexVal: 3 },
+            { label: "6: Direc.", stepVal: 5, indexVal: 0 },
+            { label: "7: Relatório", stepVal: 6, indexVal: 0 },
+            { label: "8: Obrigado", stepVal: 7, indexVal: 0 }
+          ].map((item) => {
+            const isActive = 
+              item.stepVal === 5 
+                ? step === 5
+                : item.stepVal === 6
+                  ? step === 6
+                  : item.stepVal === 7
+                    ? step === 7
+                    : (step === item.stepVal && (step !== 3 || currentQuestionIndex === item.indexVal));
+
+            return (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => {
+                  if (item.stepVal === 5) {
+                    seedRandomResult();
+                  } else if (item.stepVal === 6) {
+                    if (!computedResult) {
+                      seedRandomResult();
+                    }
+                    setStep(6);
+                  } else if (item.stepVal === 7) {
+                    if (!computedResult) {
+                      seedRandomResult();
+                    }
+                    setStep(7);
+                  } else {
+                    setStep(item.stepVal);
+                    if (item.stepVal <= 2) {
+                      setCurrentQuestionIndex(0);
+                    } else if (item.stepVal === 3) {
+                      setCurrentQuestionIndex(item.indexVal);
+                    }
+                  }
+                }}
+                className={`py-1 px-1.5 rounded text-[8px] font-extrabold transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-[#2D62FF] text-white shadow-sm"
+                    : "bg-slate-50 text-slate-400 hover:bg-slate-100 border border-slate-200"
+                }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {isAdminOpen && <AdminPanel onClose={() => setIsAdminOpen(false)} />}
       

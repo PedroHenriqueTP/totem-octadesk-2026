@@ -1,98 +1,110 @@
-import { RespostasQuiz, TrilhaResultado, ToolScores } from "../types/diagnostico";
+import { TrilhaResultado, RespostasQuiz } from "../types/diagnostico";
 
-export function calcularTrilhaOctadesk(respostas: RespostasQuiz): TrilhaResultado {
-  const isGrandeEmpresa = 
-    respostas.tamanhoOperacao === 'De 21 a 100 colaboradores' || 
-    respostas.tamanhoOperacao === 'Mais de 100 colaboradores';
+export interface EtapaDirecionamento {
+  numero: number;
+  nome: string;
+  dor: string;
+  iconName: string;
+}
 
-  if (!respostas.possuiIaVendas) {
-    if (isGrandeEmpresa) {
-      return 'Enterprise';
-    } else {
-      return 'Automacao';
-    }
+/**
+ * Retorna a etapa recomendada na parede com base na Dor Principal (Pergunta 1)
+ */
+export function obterEtapaRecomendada(
+  dorValue: string,
+  _volumeP3?: string,
+  _plataformaP4?: string
+): EtapaDirecionamento {
+  switch (dorValue) {
+    case 'captacao':
+      return {
+        numero: 1,
+        nome: "Captação",
+        dor: "Quero alcançar mais clientes",
+        iconName: "Megafone"
+      };
+    case 'vendas':
+      return {
+        numero: 2,
+        nome: "Atendimento de Vendas",
+        dor: "Perco vendas porque meu time demora para responder",
+        iconName: "Headset Vendas"
+      };
+    case 'notificacoes':
+      return {
+        numero: 3,
+        nome: "Notificações",
+        dor: "Meu time passa o dia respondendo 'onde está meu pedido'",
+        iconName: "Sino"
+      };
+    case 'posvenda':
+      return {
+        numero: 4,
+        nome: "Pós-venda",
+        dor: "Tenho muita troca, devolução e reclamação",
+        iconName: "Caixa"
+      };
+    case 'helpdesk':
+    default:
+      return {
+        numero: 5,
+        nome: "Helpdesk",
+        dor: "Meu atendimento não tem organização, SLA nem métricas",
+        iconName: "Headset Suporte"
+      };
   }
+}
 
-  if (isGrandeEmpresa) {
+/**
+ * Mapeia a dor da P1 para uma Trilha compatível com o banco legível e legado
+ */
+export function obterTrilhaPorDor(dorValue: string): TrilhaResultado {
+  switch (dorValue) {
+    case 'captacao':
+    case 'vendas':
+      return 'Automacao';
+    case 'notificacoes':
+    case 'posvenda':
+      return 'Atendimento';
+    case 'helpdesk':
+      return 'Enterprise';
+    default:
+      return 'Controle';
+  }
+}
+
+/**
+ * Regra visual e de CRM de Sinalização de Alerta Comercial:
+ * - P2 (Porte): Entre 200 a 500 (Opção C) ou Mais de 500 (Opção D) -> Prioridade comercial
+ * - P3 (Volume): Mais de 200 (Opção C) -> Prioridade comercial
+ * - P4 (Plataforma): Principalmente marketplaces (ML, Shopee, Magalu) (Opção C) -> Alerta vendedor
+ */
+export function verificarAlertaComercial(
+  cargo: string,
+  equipeP2: string,
+  volumeP3: string,
+  plataformaP4: string
+): boolean {
+  const cargoClean = cargo ? cargo.toLowerCase().trim() : '';
+  const cargosDecisores = [
+    'ceo', 'dono', 'proprietario', 'proprietária', 'socio', 'sócio', 
+    'comprador', 'compradora', 'diretor', 'diretora', 'director', 
+    'gerente', 'manager', 'head', 'coordenador', 'coordenadora', 
+    'operacoes', 'operações', 'founder', 'cofounder'
+  ];
+
+  const matchesCargo = cargosDecisores.some(keyword => cargoClean && cargoClean.includes(keyword));
+  const matchesEquipe = equipeP2 === 'Entre 200 a 500' || equipeP2 === 'Mais de 500';
+  const matchesVolume = volumeP3 === 'Mais de 200';
+  const matchesPlataforma = plataformaP4 === 'Principalmente marketplaces (ML, Shopee, Magalu)';
+
+  return matchesCargo || matchesEquipe || matchesVolume || matchesPlataforma;
+}
+
+// Mantido para compatibilidade, caso outros componentes usem
+export function calcularTrilhaOctadesk(respostas: Partial<RespostasQuiz>): TrilhaResultado {
+  if (respostas.tamanhoOperacao === 'Mais de 100 colaboradores' || respostas.tamanhoOperacao === 'De 21 a 100 colaboradores') {
     return 'Enterprise';
   }
-
-  if (respostas.possuiHelpdeskSla || respostas.possuiEmissaoNotas) {
-    return 'Atendimento';
-  }
-
-  return 'Controle';
-}
-
-export function calcularPontosDiagnostico(
-  equipe: string, 
-  volume: string, 
-  canais: string[]
-): ToolScores {
-  const scores: ToolScores = { faq: 0, sales: 0, info: 0, cart: 0 };
-  
-  // Pontuação por Equipe
-  if (equipe === 'Eu + 1') {
-    scores.faq += 1;
-  } else if (equipe === '3 a 5') {
-    scores.faq += 2;
-    scores.sales += 1;
-  } else if (equipe === '6 a 15') {
-    scores.faq += 3;
-    scores.sales += 2;
-    scores.info += 1;
-  } else if (equipe === 'Mais de 15') {
-    scores.faq += 4;
-    scores.sales += 2;
-    scores.info += 3;
-    scores.cart += 1;
-  }
-
-  // Pontuação por Volume
-  if (volume === 'Até 100/mês') {
-    scores.sales += 2;
-    scores.faq += 1;
-  } else if (volume === 'De 101 a 1000/mês') {
-    scores.cart += 3;
-    scores.info += 2;
-    scores.faq += 2;
-  } else if (volume === 'Mais de 1000/mês') {
-    scores.cart += 5;
-    scores.info += 4;
-    scores.faq += 3;
-  }
-
-  // Pontuação por Canais
-  canais.forEach(canal => {
-    if (canal === 'WhatsApp') {
-      scores.sales += 2;
-      scores.faq += 2;
-    } else if (canal === 'Instagram') {
-      scores.sales += 2;
-    } else if (canal === 'E-mail') {
-      scores.info += 2;
-      scores.faq += 1;
-    } else if (canal === 'Chat no Site') {
-      scores.faq += 2;
-      scores.sales += 1;
-    } else if (canal === 'Telefone') {
-      scores.info += 1;
-    }
-  });
-
-  return scores;
-}
-
-export function obterFerramentaPrioritaria(scores: ToolScores): 'faq' | 'sales' | 'info' | 'cart' {
-  const priorities: Array<'faq' | 'sales' | 'info' | 'cart'> = ['cart', 'sales', 'faq', 'info'];
-  let maxKey: 'faq' | 'sales' | 'info' | 'cart' = 'cart';
-  let maxVal = -1;
-  
-  for (const key of priorities) {
-    if (scores[key] > maxVal) {
-      maxVal = scores[key];
-      maxKey = key;
-    }
-  }
-  return maxKey;
+  return 'Automacao';
 }

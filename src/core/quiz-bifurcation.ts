@@ -5,16 +5,23 @@ export interface LeadData {
   empresa: string;
   email: string;
   telefone: string;
-  tamanhoOperacao: string;
-  volumeVendasMes: string;
-  canais: string[];
-  transbordoUrgente: boolean;
-  scoreQuiz: number;
+  tamanhoOperacao?: string;
+  volumeVendasMes?: string;
+  canais?: string[];
+  transbordoUrgente?: boolean;
+  scoreQuiz?: number;
   toolScores?: ToolScores;
   prioridadeFerramenta?: string;
   tempoJornadaSegundos?: number;
   isPotentialLead?: boolean;
   prejuizoOperacional?: number;
+  cargo?: string;
+  dorPrincipal?: string;
+  tamanhoEmpresa?: string;
+  volumeAtendimentos?: string;
+  plataforma?: string;
+  etapaIndicada?: string;
+  isDecisor?: boolean;
 }
 
 export type DestinoLead = 

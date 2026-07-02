@@ -13,6 +13,11 @@ export interface RespostasQuiz {
 
 export type TrilhaResultado = 'Automacao' | 'Atendimento' | 'Controle' | 'Enterprise';
 
+export type DorPrincipal = 'Captação' | 'Atendimento de Vendas' | 'Notificações' | 'Pós-venda' | 'Helpdesk';
+export type PorteEquipe = 'Ate 1 colaborador' | 'De 2 a 5 colaboradores' | 'De 6 a 15 colaboradores' | 'Mais de 15 colaboradores';
+export type VolumeAtendimento = 'Até 100/mês' | 'De 101 a 1000/mês' | 'Mais de 1000/mês';
+export type PlataformaEcommerce = 'Shopify / WooCommerce / Tray / Nuvemshop' | 'Plataforma própria' | 'Marketplaces fechados ou sem loja';
+
 export interface ToolScores {
   faq: number;
   sales: number;

@@ -3,10 +3,10 @@
   "short_name": "Octadesk DeepDive",
   "description": "Interface de diagnóstico corporativo da Octadesk.",
   "start_url": "/",
-  "display": "standalone",
-  "orientation": "landscape",
-  "background_color": "#0F172A",
-  "theme_color": "#0284C7",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#FFFFFF",
+  "theme_color": "#2D62FF",
   "icons": [
     {
       "src": "/icon-192x192.png",
