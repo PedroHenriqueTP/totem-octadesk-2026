@@ -534,12 +534,12 @@ export default function QuizApp() {
   let currentTheme = getThemeForScore(leadScore);
   if (computedResult?.isDecisor) {
     currentTheme = {
-      bgStyle: { background: 'radial-gradient(circle at center, #0B0F19 0%, #030712 100%)' },
+      bgStyle: { background: 'linear-gradient(160deg, #001B3D 0%, #0D2E6B 55%, #001B3D 100%)' },
       textColorClass: 'text-white',
-      subTextColorClass: 'text-slate-300',
-      pillClass: 'bg-pink-500/25 text-pink-400 border border-pink-500/35 font-extrabold animate-pulse shadow-[0_0_15px_rgba(236,72,153,0.15)]',
-      cardBgClass: 'bg-slate-900/60 border border-pink-500/30 backdrop-blur-md shadow-[0_0_40px_rgba(236,72,153,0.18)]',
-      buttonClass: 'bg-pink-600 text-white hover:bg-pink-700 shadow-[0_8px_24px_rgba(236,72,153,0.3)]',
+      subTextColorClass: 'text-blue-200',
+      pillClass: 'bg-[#2D62FF]/30 text-[#7EAAFF] border border-[#2D62FF]/50 font-extrabold shadow-[0_0_18px_rgba(45,98,255,0.25)]',
+      cardBgClass: 'bg-white/8 border border-[#2D62FF]/30 backdrop-blur-md shadow-[0_0_40px_rgba(45,98,255,0.20)]',
+      buttonClass: 'bg-[#2D62FF] text-white hover:bg-[#1A4ED9] shadow-[0_8px_24px_rgba(45,98,255,0.35)]',
       logoType: 'white'
     };
   }
@@ -553,30 +553,30 @@ export default function QuizApp() {
         className="totem-viewport-container transition-all duration-300 relative flex flex-col justify-between overflow-hidden shadow-2xl"
         style={step >= 5 ? { ...currentTheme.bgStyle, color: currentTheme.logoType === 'white' ? '#FFFFFF' : '#1F2538' } as React.CSSProperties : { backgroundColor: '#FFFFFF', color: '#1F2538' }}
       >
-        {/* Special Dystopian/Cyberpunk Animated Background for Potential Leads */}
+        {/* Premium Navy Animated Background for High-Potential Leads */}
         {step >= 5 && computedResult?.isDecisor && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
             <motion.div 
               animate={{ 
-                scale: [1, 1.15, 0.95, 1],
-                opacity: [0.35, 0.5, 0.25, 0.35],
+                scale: [1, 1.2, 0.9, 1],
+                opacity: [0.25, 0.4, 0.15, 0.25],
               }}
-              transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
-              className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-pink-500/10 blur-[80px]"
+              transition={{ repeat: Infinity, duration: 9, ease: "easeInOut" }}
+              className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#2D62FF]/15 blur-[100px]"
             />
             <motion.div 
               animate={{ 
-                scale: [1, 0.9, 1.1, 1],
-                opacity: [0.3, 0.45, 0.2, 0.3],
+                scale: [1, 0.85, 1.15, 1],
+                opacity: [0.2, 0.35, 0.1, 0.2],
               }}
-              transition={{ repeat: Infinity, duration: 9, ease: "easeInOut", delay: 1 }}
-              className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-pink-600/10 blur-[85px]"
+              transition={{ repeat: Infinity, duration: 11, ease: "easeInOut", delay: 1.5 }}
+              className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#0D3FA6]/20 blur-[100px]"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(236,72,153,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(236,72,153,0.02)_1px,transparent_1px)] bg-[size:32px_32px] opacity-60" />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(45,98,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(45,98,255,0.025)_1px,transparent_1px)] bg-[size:36px_36px] opacity-50" />
             <motion.div 
               animate={{ y: ["-10%", "110%"] }}
-              transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-              className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-pink-500/20 to-transparent shadow-[0_0_12px_rgba(236,72,153,0.4)]"
+              transition={{ repeat: Infinity, duration: 5, ease: "linear" }}
+              className="absolute left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#2D62FF]/25 to-transparent"
             />
           </div>
         )}
@@ -941,10 +941,10 @@ export default function QuizApp() {
                   {computedResult.isDecisor && (
                     <motion.div
                       animate={{ scale: [1, 1.04, 1] }}
-                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                      className="bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black text-[9px] tracking-[0.2em] uppercase px-5 py-1.5 rounded-full border border-pink-400/30 shadow-[0_4px_16px_rgba(236,72,153,0.35)] shrink-0 select-none"
+                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                      className="bg-gradient-to-r from-[#2D62FF] to-[#0D3FA6] text-white font-black text-[9px] tracking-[0.2em] uppercase px-5 py-1.5 rounded-full border border-[#2D62FF]/40 shadow-[0_4px_16px_rgba(45,98,255,0.4)] shrink-0 select-none"
                     >
-                      ★ CLIENTE FOCO • ABORDAGEM IMEDIATA ★
+                      ⚠️ MARKETPLACE • ACIONAR VENDEDOR
                     </motion.div>
                   )}
                 </motion.div>
@@ -954,7 +954,7 @@ export default function QuizApp() {
                   <p className={`text-[11px] font-semibold tracking-wide ${currentTheme.textColorClass === 'text-white' ? 'text-white/60' : 'text-slate-400'}`}>
                     Comece pela Etapa {computedResult.etapaRecomendada.numero}
                   </p>
-                  <h2 className={`text-4xl font-black leading-tight tracking-tight ${computedResult.isDecisor ? 'text-pink-400' : 'text-[#2D62FF]'}`}>
+                  <h2 className={`text-4xl font-black leading-tight tracking-tight ${computedResult.isDecisor ? 'text-[#7EAAFF]' : 'text-[#2D62FF]'}`}>
                     {computedResult.etapaRecomendada.nome}
                   </h2>
                 </motion.div>
@@ -993,7 +993,7 @@ export default function QuizApp() {
                 >
                   {/* Dotted curve behind icons */}
                   <svg 
-                    className={`absolute inset-x-4 bottom-1 h-8 ${computedResult.isDecisor ? 'text-pink-500/25' : 'text-[#2D62FF]/20'}`} 
+                    className={`absolute inset-x-4 bottom-1 h-8 ${computedResult.isDecisor ? 'text-[#2D62FF]/30' : 'text-[#2D62FF]/20'}`} 
                     viewBox="0 0 120 24" 
                     fill="none" 
                     preserveAspectRatio="none"
@@ -1005,7 +1005,7 @@ export default function QuizApp() {
                     {/* Chat bubble — left, high */}
                     <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shadow-md translate-y-[-14px] ${
                       computedResult.isDecisor 
-                        ? 'bg-slate-900 border-pink-500/40 text-pink-400' 
+                        ? 'bg-[#0D2E6B] border-[#2D62FF]/50 text-[#7EAAFF]' 
                         : 'bg-white border-slate-200 text-[#2D354D]'
                     }`}>
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -1015,7 +1015,7 @@ export default function QuizApp() {
                     {/* Node/org-tree — center, low (bottom of curve) */}
                     <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shadow-md translate-y-[0px] ${
                       computedResult.isDecisor 
-                        ? 'bg-slate-900 border-pink-500/40 text-pink-400' 
+                        ? 'bg-[#0D2E6B] border-[#2D62FF]/50 text-[#7EAAFF]' 
                         : 'bg-white border-slate-200 text-[#2D354D]'
                     }`}>
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -1025,7 +1025,7 @@ export default function QuizApp() {
                     {/* Bot/robot — right, high */}
                     <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center shadow-md translate-y-[-14px] ${
                       computedResult.isDecisor 
-                        ? 'bg-slate-900 border-pink-500/40 text-pink-400' 
+                        ? 'bg-[#0D2E6B] border-[#2D62FF]/50 text-[#7EAAFF]' 
                         : 'bg-white border-slate-200 text-[#2D354D]'
                     }`}>
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -1041,7 +1041,7 @@ export default function QuizApp() {
                     onClick={handleReset}
                     className={`w-full py-4 rounded-2xl font-black transition-all text-xs tracking-wider uppercase active:scale-[0.98] cursor-pointer block text-center shadow-md ${
                       computedResult.isDecisor 
-                        ? 'bg-pink-600 text-white hover:bg-pink-700 shadow-[0_8px_24px_rgba(236,72,153,0.3)]'
+                        ? 'bg-[#2D62FF] text-white hover:bg-[#1A4ED9] shadow-[0_8px_24px_rgba(45,98,255,0.4)]'
                         : currentTheme.textColorClass === 'text-white' 
                           ? 'bg-white text-[#1F2538] hover:bg-slate-50' 
                           : 'bg-[#2D62FF] text-white hover:bg-[#1A4ED9]'
@@ -1067,8 +1067,8 @@ export default function QuizApp() {
                   {computedResult.isDecisor && (
                     <motion.span 
                       animate={{ scale: [1, 1.03, 1] }}
-                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                      className="inline-block text-[10px] font-black uppercase tracking-[0.2em] text-white bg-gradient-to-r from-pink-500 to-rose-600 border border-pink-400 px-4.5 py-1.5 rounded-full w-fit mx-auto shadow-[0_0_15px_rgba(236,72,153,0.3)] mb-1.5 select-none"
+                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                      className="inline-block text-[10px] font-black uppercase tracking-[0.2em] text-white bg-gradient-to-r from-[#2D62FF] to-[#0D3FA6] border border-[#2D62FF]/50 px-4.5 py-1.5 rounded-full w-fit mx-auto shadow-[0_0_18px_rgba(45,98,255,0.35)] mb-1.5 select-none"
                     >
                       ★ CLIENTE FOCO • ABORDAGEM IMEDIATA ★
                     </motion.span>
@@ -1085,7 +1085,7 @@ export default function QuizApp() {
                     currentTheme.textColorClass === 'text-white'
                       ? 'bg-white/10 border-white/20 text-white'
                       : computedResult.isDecisor
-                        ? 'bg-pink-50/50 border border-pink-200 text-[#1F2538] shadow-sm'
+                        ? 'bg-[#EEF4FF] border border-[#2D62FF]/20 text-[#1F2538] shadow-sm'
                         : 'bg-slate-50 border-slate-200 text-[#1F2538]'
                   }`}
                 >
@@ -1205,10 +1205,10 @@ export default function QuizApp() {
                   {computedResult?.isDecisor && (
                     <motion.div
                       animate={{ scale: [1, 1.05, 1] }}
-                      transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                      className="bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black text-[9px] tracking-[0.25em] uppercase px-5 py-2 rounded-full border border-pink-400/30 shadow-[0_4px_16px_rgba(236,72,153,0.4)] mt-3 mx-auto w-fit select-none"
+                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                      className="bg-gradient-to-r from-[#2D62FF] to-[#0D3FA6] text-white font-black text-[9px] tracking-[0.25em] uppercase px-5 py-2 rounded-full border border-[#2D62FF]/40 shadow-[0_4px_20px_rgba(45,98,255,0.45)] mt-3 mx-auto w-fit select-none"
                     >
-                      ★ ABORDAGEM IMEDIATA ★
+                      ⚠️ ACIONAR VENDEDOR AGORA
                     </motion.div>
                   )}
                 </motion.div>

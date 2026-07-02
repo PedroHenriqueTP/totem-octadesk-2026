@@ -74,31 +74,18 @@ export function obterTrilhaPorDor(dorValue: string): TrilhaResultado {
 }
 
 /**
- * Regra visual e de CRM de Sinalização de Alerta Comercial:
- * - P2 (Porte): Entre 200 a 500 (Opção C) ou Mais de 500 (Opção D) -> Prioridade comercial
- * - P3 (Volume): Mais de 200 (Opção C) -> Prioridade comercial
- * - P4 (Plataforma): Principalmente marketplaces (ML, Shopee, Magalu) (Opção C) -> Alerta vendedor
+ * Regra de Sinalização de Alerta Comercial para o Vendedor:
+ * APENAS quando o lead opera em marketplaces (ML, Shopee, Magalu) — Opção C da P4.
+ * Cargo, porte e volume afetam o score de pontuação, mas NÃO disparam a tela navy.
  */
 export function verificarAlertaComercial(
-  cargo: string,
-  equipeP2: string,
-  volumeP3: string,
+  _cargo: string,
+  _equipeP2: string,
+  _volumeP3: string,
   plataformaP4: string
 ): boolean {
-  const cargoClean = cargo ? cargo.toLowerCase().trim() : '';
-  const cargosDecisores = [
-    'ceo', 'dono', 'proprietario', 'proprietária', 'socio', 'sócio', 
-    'comprador', 'compradora', 'diretor', 'diretora', 'director', 
-    'gerente', 'manager', 'head', 'coordenador', 'coordenadora', 
-    'operacoes', 'operações', 'founder', 'cofounder'
-  ];
-
-  const matchesCargo = cargosDecisores.some(keyword => cargoClean && cargoClean.includes(keyword));
-  const matchesEquipe = equipeP2 === 'Entre 200 a 500' || equipeP2 === 'Mais de 500';
-  const matchesVolume = volumeP3 === 'Mais de 200';
-  const matchesPlataforma = plataformaP4 === 'Principalmente marketplaces (ML, Shopee, Magalu)';
-
-  return matchesCargo || matchesEquipe || matchesVolume || matchesPlataforma;
+  // Critério único e intencional: marketplace = acionar vendedor
+  return plataformaP4 === 'Principalmente marketplaces (ML, Shopee, Magalu)';
 }
 
 // Mantido para compatibilidade, caso outros componentes usem

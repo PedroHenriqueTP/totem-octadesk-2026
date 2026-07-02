@@ -13,6 +13,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "merge_leads.js",
+    // Playwright output — folder may not exist when tests haven't run
+    "test-results/**",
+    "playwright-report/**",
   ]),
 ]);
 
