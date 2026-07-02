@@ -929,47 +929,80 @@ export default function QuizApp() {
                 initial="hidden"
                 animate="show"
                 exit="exit"
-                className="py-10 text-center flex flex-col justify-between items-center w-full flex-1 max-w-md mx-auto"
+                className="py-10 text-center flex flex-col justify-between items-center w-full flex-1 max-w-md mx-auto relative overflow-hidden"
               >
-                <motion.div variants={itemVariants} className="space-y-2 text-center flex flex-col items-center w-full">
-                  <p className={`text-xs font-bold uppercase tracking-wider ${currentTheme.textColorClass === 'text-white' ? 'text-white/80' : 'text-slate-500'}`}>
-                    Obrigado pela sua participação!
+                {/* Decorative Bottom Wave shape for Step 5 */}
+                {!computedResult.isDecisor && (
+                  <div className="absolute right-0 bottom-0 w-32 h-32 bg-[#2D62FF]/5 rounded-tl-[100px] pointer-events-none z-0" />
+                )}
+
+                <motion.div variants={itemVariants} className="space-y-1.5 text-center flex flex-col items-center w-full">
+                  <p className={`text-xs font-semibold ${currentTheme.textColorClass === 'text-white' ? 'text-white/80' : 'text-slate-500'}`}>
+                    Obrigado pela sua participação
                   </p>
                   {computedResult.isDecisor && (
                     <motion.div
                       animate={{ scale: [1, 1.04, 1] }}
                       transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                      className="bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black text-[9px] tracking-[0.2em] uppercase px-5 py-1.5 rounded-full border border-pink-400/30 shadow-[0_4px_16px_rgba(236,72,153,0.35)] my-1 shrink-0 select-none"
+                      className="bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black text-[9px] tracking-[0.2em] uppercase px-5 py-1.5 rounded-full border border-pink-400/30 shadow-[0_4px_16px_rgba(236,72,153,0.35)] my-1.5 shrink-0 select-none"
                     >
                       ★ CLIENTE FOCO • ABORDAGEM IMEDIATA ★
                     </motion.div>
                   )}
-                  <span className={`text-[10px] font-black uppercase tracking-[0.3em] px-4.5 py-2 rounded-full ${currentTheme.pillClass}`}>
+                  <p className={`text-xs font-black tracking-wide pt-1 ${currentTheme.textColorClass === 'text-white' ? 'text-white' : 'text-slate-800'}`}>
                     Comece pela Etapa {computedResult.etapaRecomendada.numero}
-                  </span>
-                  <h2 className={`text-2xl md:text-3xl font-black leading-tight pt-1.5 tracking-wide drop-shadow-sm w-full truncate ${currentTheme.textColorClass}`}>
+                  </p>
+                  <h2 className={`text-3xl font-black leading-none pt-0.5 tracking-tight drop-shadow-sm w-full truncate ${computedResult.isDecisor ? 'text-pink-400' : 'text-[#2D62FF]'}`}>
                     {computedResult.etapaRecomendada.nome}
                   </h2>
                 </motion.div>
 
                 {/* Box de Recomendação com Splash Art / Glassmorphism */}
-                <motion.div variants={itemVariants} className={`w-full rounded-[32px] p-6 flex flex-col items-center justify-center space-y-4 shadow-[0_16px_36px_rgba(31,41,55,0.06)] ${currentTheme.cardBgClass} my-auto`}>
+                <motion.div variants={itemVariants} className={`w-full rounded-[32px] p-6 flex flex-col items-center justify-center shadow-[0_16px_36px_rgba(31,41,55,0.06)] ${currentTheme.cardBgClass} my-auto`}>
                   <motion.div 
                     animate={{ y: [0, -4, 0] }}
                     transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                    className="relative w-28 h-28 flex items-center justify-center bg-white rounded-full shadow-md border border-slate-100 transform scale-105 p-4"
+                    className="relative w-full aspect-[4/3] flex items-center justify-center select-none"
                   >
-                    <div 
-                      className="w-full h-full text-[#2D62FF] flex items-center justify-center [&>svg]:w-full [&>svg]:h-full" 
-                      dangerouslySetInnerHTML={{ __html: ETAPAS_PAREDE[computedResult.dorValue]?.iconSvg || "" }} 
+                    <Image 
+                      src={ETAPAS_PAREDE[computedResult.dorValue]?.imagePath} 
+                      alt={computedResult.etapaRecomendada.nome} 
+                      width={280} 
+                      height={210} 
+                      className="w-auto h-48 object-contain rounded-2xl select-none"
+                      priority
                     />
                   </motion.div>
-                  <p className={`text-xs md:text-sm leading-relaxed max-w-xs font-medium pt-1 text-center ${currentTheme.textColorClass === 'text-white' ? 'text-white/95' : 'text-slate-650'}`}>
-                    {ETAPAS_PAREDE[computedResult.dorValue]?.description}
-                  </p>
                 </motion.div>
 
-                <motion.div variants={itemVariants} className="w-full mt-4">
+                {/* Bottom Kiosk Dotted Curve with 3 Brand Icons */}
+                <motion.div 
+                  variants={itemVariants} 
+                  className="w-full relative py-6 flex items-center justify-center select-none shrink-0"
+                >
+                  <svg className={`absolute inset-x-0 w-full h-8 ${computedResult.isDecisor ? 'text-pink-500/20' : 'text-[#2D62FF]/15'}`} viewBox="0 0 100 20" fill="none" preserveAspectRatio="none">
+                    <path d="M0,10 Q50,20 100,10" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" fill="none" />
+                  </svg>
+                  <div className="flex justify-between w-3/4 max-w-[280px] relative z-10">
+                    <div className={`w-8 h-8 rounded-full border flex items-center justify-center shadow-sm transform translate-y-[-2px] ${currentTheme.textColorClass === 'text-white' ? 'bg-slate-900 border-pink-500/30 text-pink-400' : 'bg-white border-slate-200/80 text-[#2D354D]'}`}>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className={`w-8 h-8 rounded-full border flex items-center justify-center shadow-sm transform translate-y-[2px] ${currentTheme.textColorClass === 'text-white' ? 'bg-slate-900 border-pink-500/30 text-pink-400' : 'bg-white border-slate-200/80 text-[#2D354D]'}`}>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2a3 3 0 100 6 3 3 0 000-6zM6 18a3 3 0 100 6 3 3 0 000-6zM18 18a3 3 0 100 6 3 3 0 000-6zM12 8v5H6v2h12v-2h-6v-5z"/>
+                      </svg>
+                    </div>
+                    <div className={`w-8 h-8 rounded-full border flex items-center justify-center shadow-sm transform translate-y-[-2px] ${currentTheme.textColorClass === 'text-white' ? 'bg-slate-900 border-pink-500/30 text-pink-400' : 'bg-white border-slate-200/80 text-[#2D354D]'}`}>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a1 1 0 011 1v1h3a2 2 0 012 2v2a1 1 0 011 1v4a1 1 0 01-1 1v2a2 2 0 01-2 2h-3v1a1 1 0 11-2 0v-1H6a2 2 0 01-2-2v-2a1 1 0 01-1-1V9a1 1 0 011-1V6a2 2 0 012-2h3V3a1 1 0 011-1zm-3 8a1 1 0 100-2 1 1 0 000 2zm6-1a1 1 0 112 0 1 1 0 01-2 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="w-full mt-4 shrink-0">
                   <button
                     onClick={handleReset}
                     className={`w-full py-4 rounded-2xl font-black transition-all text-xs tracking-wider uppercase active:scale-[0.98] cursor-pointer block text-center shadow-md ${currentTheme.textColorClass === 'text-white' ? 'bg-white text-[#1F2538] hover:bg-slate-50' : 'bg-[#2D62FF] text-white hover:bg-[#1A4ED9]'}`}

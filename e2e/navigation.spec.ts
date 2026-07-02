@@ -34,7 +34,7 @@ test('E2E Navigation completes the entire diagnostic journey', async ({ page }) 
   await expect(page.locator('text=Processando Informações')).toBeVisible();
 
   // Step 5: Direcionamento
-  await expect(page.locator('text=Obrigado pela sua participação!')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('text=Obrigado pela sua participação')).toBeVisible({ timeout: 10000 });
   await page.getByRole('button', { name: 'Novo Diagnóstico' }).click();
 
   // Back to Step 0: Recepção
