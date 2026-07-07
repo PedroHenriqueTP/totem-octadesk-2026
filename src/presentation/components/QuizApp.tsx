@@ -553,31 +553,12 @@ export default function QuizApp() {
         className="totem-viewport-container transition-all duration-300 relative flex flex-col justify-between overflow-hidden shadow-2xl"
         style={step >= 5 ? { ...currentTheme.bgStyle, color: currentTheme.logoType === 'white' ? '#FFFFFF' : '#1F2538' } as React.CSSProperties : { backgroundColor: '#FFFFFF', color: '#1F2538' }}
       >
-        {/* Premium Navy Animated Background for High-Potential Leads */}
+        {/* Navy Ambient Background for High-Potential Leads — CSS only, no JS loops */}
         {step >= 5 && computedResult?.isDecisor && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-            <motion.div 
-              animate={{ 
-                scale: [1, 1.2, 0.9, 1],
-                opacity: [0.25, 0.4, 0.15, 0.25],
-              }}
-              transition={{ repeat: Infinity, duration: 9, ease: "easeInOut" }}
-              className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#2D62FF]/15 blur-[100px]"
-            />
-            <motion.div 
-              animate={{ 
-                scale: [1, 0.85, 1.15, 1],
-                opacity: [0.2, 0.35, 0.1, 0.2],
-              }}
-              transition={{ repeat: Infinity, duration: 11, ease: "easeInOut", delay: 1.5 }}
-              className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#0D3FA6]/20 blur-[100px]"
-            />
+            <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#2D62FF]/15 blur-[80px] animate-pulse-slow" />
+            <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#0D3FA6]/20 blur-[80px] animate-pulse-slow" style={{ animationDelay: '2s' }} />
             <div className="absolute inset-0 bg-[linear-gradient(rgba(45,98,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(45,98,255,0.025)_1px,transparent_1px)] bg-[size:36px_36px] opacity-50" />
-            <motion.div 
-              animate={{ y: ["-10%", "110%"] }}
-              transition={{ repeat: Infinity, duration: 5, ease: "linear" }}
-              className="absolute left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#2D62FF]/25 to-transparent"
-            />
           </div>
         )}
 
@@ -910,8 +891,8 @@ export default function QuizApp() {
 
                 <div className="w-full max-w-xs flex flex-col items-center gap-y-3 mt-4">
                   <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200/65 relative">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-[#2D62FF] to-blue-400"
+                    <div
+                      className="h-full bg-gradient-to-r from-[#2D62FF] to-blue-400 transition-all duration-75 ease-linear"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -939,13 +920,9 @@ export default function QuizApp() {
                     Obrigado pela sua participação
                   </p>
                   {computedResult.isDecisor && (
-                    <motion.div
-                      animate={{ scale: [1, 1.04, 1] }}
-                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                      className="bg-gradient-to-r from-[#2D62FF] to-[#0D3FA6] text-white font-black text-[9px] tracking-[0.2em] uppercase px-5 py-1.5 rounded-full border border-[#2D62FF]/40 shadow-[0_4px_16px_rgba(45,98,255,0.4)] shrink-0 select-none"
-                    >
+                    <div className="animate-badge-pulse bg-gradient-to-r from-[#2D62FF] to-[#0D3FA6] text-white font-black text-[9px] tracking-[0.2em] uppercase px-5 py-1.5 rounded-full border border-[#2D62FF]/40 shadow-[0_4px_16px_rgba(45,98,255,0.4)] shrink-0 select-none">
                       ⚠️ MARKETPLACE • ACIONAR VENDEDOR
-                    </motion.div>
+                    </div>
                   )}
                 </motion.div>
 
@@ -969,11 +946,7 @@ export default function QuizApp() {
                   }`}
                   style={{ minHeight: '180px', maxHeight: '260px' }}
                 >
-                  <motion.div 
-                    animate={{ y: [0, -6, 0] }}
-                    transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                    className="flex items-center justify-center p-4 select-none w-full h-full"
-                  >
+                  <div className="animate-float flex items-center justify-center p-4 select-none w-full h-full">
                     <Image 
                       src={ETAPAS_PAREDE[computedResult.dorValue]?.imagePath} 
                       alt={computedResult.etapaRecomendada.nome} 
@@ -983,7 +956,7 @@ export default function QuizApp() {
                       className="select-none drop-shadow-xl"
                       priority
                     />
-                  </motion.div>
+                  </div>
                 </motion.div>
 
                 {/* Bottom Kiosk Dotted Curve with 3 Brand Icons */}
@@ -1065,13 +1038,9 @@ export default function QuizApp() {
               >
                 <motion.div variants={itemVariants} className="space-y-1 text-center flex flex-col items-center">
                   {computedResult.isDecisor && (
-                    <motion.span 
-                      animate={{ scale: [1, 1.03, 1] }}
-                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                      className="inline-block text-[10px] font-black uppercase tracking-[0.2em] text-white bg-gradient-to-r from-[#2D62FF] to-[#0D3FA6] border border-[#2D62FF]/50 px-4.5 py-1.5 rounded-full w-fit mx-auto shadow-[0_0_18px_rgba(45,98,255,0.35)] mb-1.5 select-none"
-                    >
+                    <span className="animate-badge-pulse inline-block text-[10px] font-black uppercase tracking-[0.2em] text-white bg-gradient-to-r from-[#2D62FF] to-[#0D3FA6] border border-[#2D62FF]/50 px-4.5 py-1.5 rounded-full w-fit mx-auto shadow-[0_0_18px_rgba(45,98,255,0.35)] mb-1.5 select-none">
                       ★ CLIENTE FOCO • ABORDAGEM IMEDIATA ★
-                    </motion.span>
+                    </span>
                   )}
                   <h2 className={`text-lg font-extrabold leading-tight ${currentTheme.textColorClass}`}>
                     Resumo do seu Diagnóstico
@@ -1203,13 +1172,9 @@ export default function QuizApp() {
                     Seu diagnóstico foi concluído com sucesso.
                   </p>
                   {computedResult?.isDecisor && (
-                    <motion.div
-                      animate={{ scale: [1, 1.05, 1] }}
-                      transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                      className="bg-gradient-to-r from-[#2D62FF] to-[#0D3FA6] text-white font-black text-[9px] tracking-[0.25em] uppercase px-5 py-2 rounded-full border border-[#2D62FF]/40 shadow-[0_4px_20px_rgba(45,98,255,0.45)] mt-3 mx-auto w-fit select-none"
-                    >
+                    <div className="animate-badge-pulse bg-gradient-to-r from-[#2D62FF] to-[#0D3FA6] text-white font-black text-[9px] tracking-[0.25em] uppercase px-5 py-2 rounded-full border border-[#2D62FF]/40 shadow-[0_4px_20px_rgba(45,98,255,0.45)] mt-3 mx-auto w-fit select-none">
                       ⚠️ ACIONAR VENDEDOR AGORA
-                    </motion.div>
+                    </div>
                   )}
                 </motion.div>
 

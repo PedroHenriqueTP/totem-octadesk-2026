@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack --hostname 0.0.0.0 --port 3000",
-    "dev:lan": "next dev --webpack --hostname 0.0.0.0 --port 3000",
-    "build": "next build --webpack",
+    "dev": "next dev --turbopack --hostname 0.0.0.0 --port 3000",
+    "dev:lan": "next dev --turbopack --hostname 0.0.0.0 --port 3000",
+    "build": "next build",
     "start": "next start --hostname 0.0.0.0 --port 3000",
     "lint": "eslint"
   },
@@ -13,7 +13,6 @@
     "@ducanh2912/next-pwa": "^10.2.9",
     "dexie": "^4.4.2",
     "framer-motion": "^12.38.0",
-    "lottie-react": "^2.4.1",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4"

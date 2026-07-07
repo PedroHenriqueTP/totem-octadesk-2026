@@ -71,20 +71,89 @@ body, html {
   background: #94A3B8;
 }
 
-@keyframes pulse-slow {
-  0%, 100% {
-    opacity: 0.3;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: scale(1.02);
-  }
-}
+/* ─── Keyframe Animations ─────────────────────────────────────────────────── */
 
+/* Slow ambient pulse for background blobs */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.02); }
+}
 .animate-pulse-slow {
   animation: pulse-slow 4s infinite ease-in-out;
 }
+
+/* Floating illustration (replaces framer-motion infinite y loop) */
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+.animate-float {
+  animation: float-gentle 4s ease-in-out infinite;
+}
+
+/* Badge pulse for alert indicators (replaces framer-motion scale loop) */
+@keyframes badge-scale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+.animate-badge-pulse {
+  animation: badge-scale 2s ease-in-out infinite;
+  display: inline-block;
+}
+
+/* ─── OctoMascot CSS Animations (replaces all framer-motion usage) ────────── */
+
+/* Container movements */
+@keyframes octo-idle-container {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-1.2px) rotate(0.8deg); }
+}
+@keyframes octo-thinking-container {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-1.5px); }
+}
+@keyframes octo-trilha-container {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  40%, 60% { transform: translateY(-4px) scale(1.04); }
+}
+
+/* Body movements */
+@keyframes octo-body-idle {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.03) rotate(1deg); }
+}
+@keyframes octo-body-thinking {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes octo-body-trilha {
+  0%, 100% { transform: scale(1); }
+  30%, 70% { transform: scale(1.06); }
+}
+
+/* Eye blinks */
+@keyframes octo-blink {
+  0%, 84%, 100% { transform: scaleY(1); }
+  88%, 95% { transform: scaleY(0.1); }
+}
+@keyframes octo-blink-fast {
+  0%, 78%, 100% { transform: scaleY(1); }
+  82%, 90% { transform: scaleY(0.1); }
+}
+
+/* Applied classes */
+.octo-container-idle     { animation: octo-idle-container     3s   ease-in-out infinite; }
+.octo-container-thinking { animation: octo-thinking-container 1.2s ease-in-out infinite; }
+.octo-container-trilha   { animation: octo-trilha-container   1.5s ease-in-out infinite; }
+
+.octo-body-idle     { animation: octo-body-idle     3s   ease-in-out infinite; transform-origin: 18.7px 18.7px; }
+.octo-body-thinking { animation: octo-body-thinking 1.2s ease-in-out infinite; transform-origin: 18.7px 18.7px; }
+.octo-body-trilha   { animation: octo-body-trilha   1.5s ease-in-out infinite; transform-origin: 18.7px 18.7px; }
+
+.octo-eyes-normal { animation: octo-blink      4s ease-in-out infinite; transform-origin: 18.7px 14.3px; }
+.octo-eyes-fast   { animation: octo-blink-fast 3s ease-in-out infinite; transform-origin: 18.7px 14.3px; }
+
+/* ─── Grid and Card Utilities ─────────────────────────────────────────────── */
 
 :root {
   --bg-primary: #2D354D;
@@ -136,17 +205,18 @@ input, button, select, textarea, [role="button"], .card-solucao, .octo-container
   touch-action: manipulation;
 }
 
-/* Enable vertical scroll only if viewport is too small, prevent overflow bounce on touch */
+/* Enable vertical scroll only if viewport is too small */
 body.admin-panel-root {
   overflow-y: auto;
 }
 
-/* Container de Totem Vertical Adaptativo */
+/* ─── Totem Viewport ──────────────────────────────────────────────────────── */
+
 .totem-viewport-container {
   width: 100%;
   height: 100vh;
   height: 100dvh;
-  max-width: calc(100dvh * 3 / 4); /* Mais largo que 9:16 para tablets */
+  max-width: calc(100dvh * 3 / 4);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -157,12 +227,12 @@ body.admin-panel-root {
 /* Ocultar barra de rolagem em toda a interface do totem */
 .totem-viewport-container,
 .totem-viewport-container * {
-  scrollbar-width: none !important; /* Firefox */
-  -ms-overflow-style: none !important; /* IE/Edge */
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
 }
 .totem-viewport-container::-webkit-scrollbar,
 .totem-viewport-container *::-webkit-scrollbar {
-  display: none !important; /* Chrome/Safari/Webkit */
+  display: none !important;
 }
 
 @media (min-width: 768px) {
@@ -171,7 +241,7 @@ body.admin-panel-root {
     height: 96dvh;
     max-height: 96dvh;
     width: 92%;
-    max-width: 720px; /* Enquadramento perfeito na tela */
+    max-width: 720px;
     border-radius: 32px;
     box-shadow: 0 25px 50px -12px rgba(31, 37, 56, 0.25);
     border: 1px solid rgba(45, 98, 255, 0.15);
@@ -179,7 +249,7 @@ body.admin-panel-root {
   }
 }
 
-/* Forçar comportamento correto ocupando toda a tela em tablets e dispositivos verticais */
+/* Forçar comportamento correto em tablets verticais */
 @media (orientation: portrait) {
   .totem-viewport-container {
     width: 100vw !important;
@@ -193,7 +263,7 @@ body.admin-panel-root {
   }
 }
 
-/* Temas estáticos explícitos para o Viewport Container (evita problemas de cache e compilação do Tailwind) */
+/* Temas estáticos para o Viewport Container */
 .totem-theme-white {
   background-color: #FFFFFF !important;
   color: #1F2538 !important;
@@ -203,15 +273,3 @@ body.admin-panel-root {
   background-color: #FFFFFF !important;
   color: #1F2538 !important;
 }
-
-.totem-theme-pink {
-  background-color: #FFF0F6 !important;
-  color: #1F2538 !important;
-}
-
-.totem-theme-gradient {
-  background-color: #FFFFFF !important;
-  color: #1F2538 !important;
-}
-
-
