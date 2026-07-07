@@ -255,22 +255,18 @@ export default function QuizApp() {
   useEffect(() => {
     if (step !== 4) return;
     const duration = 2500;
-    const effectStartTime = Date.now();
     
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - effectStartTime;
-      const currentProgress = Math.min((elapsed / duration) * 100, 100);
-      setProgress(currentProgress);
-    }, 16);
+    // Anima a barra de 0 a 100 via CSS sem causar re-renders insanos
+    const t1 = setTimeout(() => {
+      setProgress(100);
+    }, 50);
 
     const timer = setTimeout(() => {
-      clearInterval(interval);
-      setProgress(100);
       setStep(5);
     }, duration);
 
     return () => {
-      clearInterval(interval);
+      clearTimeout(t1);
       clearTimeout(timer);
     };
   }, [step]);
@@ -892,12 +888,12 @@ export default function QuizApp() {
                 <div className="w-full max-w-xs flex flex-col items-center gap-y-3 mt-4">
                   <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200/65 relative">
                     <div
-                      className="h-full bg-gradient-to-r from-[#2D62FF] to-blue-400 transition-all duration-75 ease-linear"
+                      className="h-full bg-gradient-to-r from-[#2D62FF] to-blue-400 transition-all duration-[2500ms] ease-linear"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <span className="font-mono text-xs text-[#2D62FF] tracking-wider font-extrabold">
-                    {Math.round(progress)}% Processado
+                  <span className="font-mono text-xs text-[#2D62FF] tracking-wider font-extrabold animate-pulse">
+                    Processando...
                   </span>
                 </div>
               </motion.div>
