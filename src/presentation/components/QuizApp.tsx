@@ -543,7 +543,7 @@ export default function QuizApp() {
 
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#F4F6F9] w-full p-0 md:p-4 select-none">
+    <main className="flex min-h-screen items-center justify-center bg-[#F4F6F9] w-full p-0 select-none overflow-hidden">
       {/* Viewport Container */}
       <div 
         className="totem-viewport-container transition-all duration-300 relative flex flex-col justify-between overflow-hidden shadow-2xl"
