@@ -213,15 +213,18 @@ body.admin-panel-root {
 /* ─── Totem Viewport ──────────────────────────────────────────────────────── */
 
 .totem-viewport-container {
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  max-width: calc(100dvh * 3 / 4);
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
   position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
+  border-radius: 0 !important;
+  border: none !important;
 }
 
 /* Ocultar barra de rolagem em toda a interface do totem */
@@ -237,15 +240,14 @@ body.admin-panel-root {
 
 @media (min-width: 768px) {
   .totem-viewport-container {
-    height: 96vh;
-    height: 96dvh;
-    max-height: 96dvh;
-    width: 92%;
-    max-width: 720px;
-    border-radius: 32px;
-    box-shadow: 0 25px 50px -12px rgba(31, 37, 56, 0.25);
-    border: 1px solid rgba(45, 98, 255, 0.15);
-    aspect-ratio: auto !important;
+    /* Removido o max-width e margins para forçar 100% em qualquer tablet */
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    border: none !important;
   }
 }
 
@@ -259,7 +261,6 @@ body.admin-panel-root {
     max-height: 100dvh !important;
     border-radius: 0 !important;
     border: none !important;
-    aspect-ratio: auto !important;
   }
 }
 

@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
     '192.168.210.*',    // Toda a subnet local
     '192.168.*.*',      // Qualquer IP LAN classe C
   ],
+  turbopack: {},
 };
 
 export default withPWA(nextConfig);
